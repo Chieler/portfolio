@@ -73,11 +73,19 @@ const r = new THREE.WebGLRenderer({antialias: true}); r.setSize(innerWidth, inne
 const ctl = new OrbitControls(cam, r.domElement); ctl.zoomSpeed = 12;
 // Plain scroll belongs to the page; zoom needs pinch (ctrlKey) or ⌘/Ctrl held.
 const hint = document.getElementById("hint"); let nudgeTimer;
+// Wheel zoom sets a target distance; the loop eases toward it so it slows at the end.
+let zoomTo = null;
 addEventListener("wheel", e => {
-  if (e.ctrlKey || e.metaKey) return;
   e.stopPropagation();
+  if (e.ctrlKey || e.metaKey) {
+    e.preventDefault(); fly = null;
+    const d = Math.max(-150, Math.min(150, e.deltaMode === 1 ? e.deltaY * 33 : e.deltaY));
+    const base = zoomTo ?? cam.position.distanceTo(ctl.target);
+    zoomTo = THREE.MathUtils.clamp(base * Math.exp(d * 0.007), ctl.minDistance, Math.min(ctl.maxDistance, 200));
+    return;
+  }
   hint.classList.add("nudge"); clearTimeout(nudgeTimer); nudgeTimer = setTimeout(() => hint.classList.remove("nudge"), 1200);
-}, {capture: true});
+}, {capture: true, passive: false});
 const bp = new Float32Array(buf(D.B.pos)), g = new THREE.Box3();
 for (let i = 0; i < bp.length; i += 3) g.expandByPoint(new THREE.Vector3(bp[i], bp[i + 1], bp[i + 2]));
 const c0 = g.getCenter(new THREE.Vector3());
@@ -189,6 +197,13 @@ let off = 0;
   if (fly) {
     ctl.target.lerp(fly.t, 0.08); cam.position.lerp(fly.p, 0.08);
     if (cam.position.distanceTo(fly.p) < 0.002 * S) { fly = null; ctl.autoRotate = true; }
+    zoomTo = null;
+  }
+  if (zoomTo !== null) {
+    const v = cam.position.clone().sub(ctl.target), d = v.length();
+    const next = d + (zoomTo - d) * 0.08;
+    cam.position.copy(ctl.target).addScaledVector(v, next / d);
+    if (Math.abs(zoomTo - next) < 0.001 * d) zoomTo = null;
   }
   ctl.update();
   off += ((ui.classList.contains("open") ? 150 : 0) - off) * 0.12;

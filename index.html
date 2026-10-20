@@ -137,6 +137,10 @@
   .env { color: #facc15; } .ok { color: #4ade80; } .ran { color: #93c5fd; } .kn { color: #c084fc; }
   .status { background: #22a32a; color: #071; color: #031a03; padding: 0 8px; display: flex; justify-content: space-between; }
 
+  .langs { font-size: 15px; letter-spacing: 0.06em; }
+  #courses { padding: 120px 24px 40px; }
+  .courses { list-style: none; max-width: 660px; margin: 40px auto 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px 32px; }
+  .courses li::before { content: "> "; color: var(--lime); }
   footer.site { padding: 48px 24px 64px; text-align: center; font-size: 13px; }
   footer.site .footer-links { display: flex; flex-direction: column; gap: 10px; align-items: center; }
   footer.site a { text-underline-offset: 4px; color: color-mix(in srgb, currentColor 75%, transparent); transition: color .15s ease; }
@@ -173,6 +177,7 @@
     <div class="head box">
       <h2 class="difftitle" aria-label="Scene / Difference"><span class="del">- Scene</span><span class="add">+ Difference</span></h2>
       <p>Two casual phone videos of the same room, recorded at different times. It reconstructs both into one metric 3D frame and reports every object that was added, removed, or moved, in plain language.</p>
+      <p class="langs">Python</p>
       <div class="links"><a href="https://github.com/Chieler/Scene-difference" target="_blank" rel="noopener noreferrer">github</a><a href="https://chieler.github.io/Scene-difference/" target="_blank" rel="noopener noreferrer">full demo</a></div>
     </div>
     <div class="git box">
@@ -187,7 +192,7 @@
         <div class="add">+++ b/bathroom (video B)</div>
         <div class="hunk">@@ moved 3.10 m: Listerine mouthwash bottle @@ drag to orbit</div>
       </div>
-      <iframe id="viewer" src="assets/scene-viewer.html?v=9" title="Interactive 3D point cloud of the room, showing detected changes" loading="lazy"></iframe>
+      <iframe id="viewer" src="assets/scene-viewer.html?v=12" title="Interactive 3D point cloud of the room, showing detected changes" loading="lazy"></iframe>
       <div class="videos" id="videos" hidden>
         <figure><video src="assets/scene-before.mp4" muted loop playsinline preload="none"></video><figcaption class="del">a/ before.mp4</figcaption></figure>
         <figure><video src="assets/scene-after.mp4" muted loop playsinline preload="none"></video><figcaption class="add">b/ after.mp4</figcaption></figure>
@@ -203,7 +208,8 @@
     <div class="head box">
       <h2>Tandem</h2>
       <span class="tag">Claude, Codex and agy as one team</span>
-      <p>A leader agent spawns workers in any harness, hands them tasks, and gets answers back in its own session. tmux carries every message; SQLite holds the shared knowledge. No daemon.</p>
+      <p>A leader agent spawns workers in any harness, hands them tasks, and gets answers back in its own session. Agents talk through tmux and share what they learn in one SQLite store, with no background server to run.</p>
+      <p class="langs">C · Shell</p>
       <div class="links"><a href="https://github.com/Chieler/Tandem" target="_blank" rel="noopener noreferrer">github</a></div>
     </div>
   </div>
@@ -229,6 +235,7 @@
       </svg>
       <p class="motion-pitch">Draw a shape. <em>Run it.</em></p>
       <p>Upload or sketch any SVG and Motion routes it onto the real street grid near you, then exports the GPX.</p>
+      <p class="langs">Python · TypeScript</p>
       <div class="links"><a href="https://motiongpx.com/" target="_blank" rel="noopener noreferrer">motiongpx.com</a></div>
     </div>
     <div class="motion-body">
@@ -257,6 +264,7 @@
       <h2>Papershade</h2>
       <span class="tag">Kindle texture, on your Mac</span>
       <p>A macOS menu-bar app that gives every display a warm, matte, paper-like finish.</p>
+      <p class="langs">Swift</p>
       <div class="links"><a href="https://github.com/Chieler/PaperShade" target="_blank" rel="noopener noreferrer">github</a><a href="https://github.com/Chieler/PaperShade/raw/main/Papershade.dmg" target="_blank" rel="noopener noreferrer">download .dmg</a></div>
     </div>
     <div class="shade-stage">
@@ -274,6 +282,21 @@
 <div class="paper" aria-hidden="true"></div>
 <div class="flash" aria-hidden="true"></div>
 <button class="pill" id="pill" aria-label="Turn Papershade off">P · off</button>
+
+<section class="dark" id="courses">
+  <div class="wrap">
+    <h2>Courses</h2>
+    <ul class="courses">
+      <li>Data Structures and Algorithms</li>
+      <li>Intro to Artificial Intelligence</li>
+      <li>Matrix Methods for Machine Learning</li>
+      <li>Data Engineering and Data Science</li>
+      <li>Machine Organization and Programming</li>
+      <li>Programming III</li>
+      <li>Intro to Discrete Mathematics</li>
+    </ul>
+  </div>
+</section>
 
 <footer class="site dark">
   <div class="footer-links">
