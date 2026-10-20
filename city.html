@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Motion: city prototype</title>
+<style>
+  body { margin: 0; background: #0a0a0a; overflow: hidden; }
+  canvas { display: block; }
+</style>
+</head>
+<body>
+<script src="assets/capybara.js"></script>
+<script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js"}}</script>
+<script type="module">
+import * as THREE from "three";
+
+// Smoothed capybara from assets/capybara.js (512x512 box), laid across ~16 blocks.
+const capy = [...window.CAPY, window.CAPY[0]];
+const toWorld = ([x, y]) => new THREE.Vector3((x - 256) / 32, 0, (y - 256) / 32);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0a0a0a);
+scene.fog = new THREE.Fog(0x0a0a0a, 16, 34);
+const cam = new THREE.PerspectiveCamera(40, innerWidth / innerHeight, 0.1, 100);
+const r = new THREE.WebGLRenderer({ antialias: true });
+r.setPixelRatio(Math.min(devicePixelRatio, 2));
+r.setSize(innerWidth, innerHeight);
+document.body.append(r.domElement);
+
+scene.add(new THREE.HemisphereLight(0xffffff, 0x000000, 0.9));
+const sun = new THREE.DirectionalLight(0xffffff, 0.8);
+sun.position.set(-6, 10, 4);
+scene.add(sun);
+
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), new THREE.MeshBasicMaterial({ color: 0x111111 }));
+ground.rotation.x = -Math.PI / 2;
+scene.add(ground);
+
+// City blocks: one instanced mesh, seeded heights, a few flat parks.
+const W = 13, H = 9, BLOCK = 0.72;
+const blocks = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshLambertMaterial({ color: 0x1e1e1e }), (2 * W + 1) * (2 * H + 1));
+let seed = 11;
+const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+const m = new THREE.Matrix4();
+let n = 0;
+for (let x = -W; x <= W; x++) for (let z = -H; z <= H; z++) {
+  const h = rnd() < 0.08 ? 0.02 : 0.12 + rnd() ** 2 * 0.9;
+  m.compose(new THREE.Vector3(x, h / 2, z), new THREE.Quaternion(), new THREE.Vector3(BLOCK, h, BLOCK));
+  blocks.setMatrixAt(n++, m);
+}
+scene.add(blocks);
+
+// Route: one thin slab per street segment, grown in order.
+// Drawn over the buildings like a map overlay, so blocks never hide it.
+const routeMat = new THREE.MeshBasicMaterial({ color: 0xbdbdbd, depthTest: false });
+const segs = capy.slice(1).map((p, i) => {
+  const a = toWorld(capy[i]), b = toWorld(p), len = a.distanceTo(b);
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(1, 0.03, 0.1), routeMat);
+  mesh.geometry.translate(0.5, 0, 0);           // grow from the segment's start
+  mesh.position.set(a.x, 0.03, a.z);
+  mesh.rotation.y = -Math.atan2(b.z - a.z, b.x - a.x);
+  mesh.renderOrder = 1;
+  scene.add(mesh);
+  return { a, b, len, mesh };
+});
+const total = segs.reduce((s, g) => s + g.len, 0);
+const runner = new THREE.Mesh(new THREE.SphereGeometry(0.09, 16, 12), new THREE.MeshBasicMaterial({ color: 0xffffff, depthTest: false }));
+runner.renderOrder = 2;
+scene.add(runner);
+
+const draw = t => {
+  let left = t * total;
+  for (const g of segs) {
+    const f = Math.max(0, Math.min(1, left / g.len));
+    g.mesh.visible = f > 0;
+    g.mesh.scale.x = Math.max(f * g.len, 1e-4);
+    if (f > 0) runner.position.lerpVectors(g.a, g.b, f).setY(0.1);  // last drawn segment wins
+    left -= g.len;
+  }
+};
+
+addEventListener("resize", () => { cam.aspect = innerWidth / innerHeight; cam.updateProjectionMatrix(); r.setSize(innerWidth, innerHeight); });
+
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const CYCLE = 9000, TRACE = 6500;
+r.setAnimationLoop(now => {
+  const k = reduced ? 1 : Math.min(1, (now % CYCLE) / TRACE);
+  draw(k * k * (3 - 2 * k));
+  // Slow drift around the city so it reads as 3D.
+  const a = reduced ? 0 : Math.sin(now / 7000) * 0.25;
+  cam.position.set(Math.sin(a) * 15, 11, Math.cos(a) * 15);
+  cam.lookAt(0, 0, 0.5);
+  r.render(scene, cam);
+});
+</script>
+</body>
+</html>

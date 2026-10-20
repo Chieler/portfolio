@@ -1,0 +1,486 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Motion: Isometric Diorama Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --card-bg: #141414;
+    --border: #2c2c2c;
+    --lime: #7fe86e;
+    --dim: #888;
+    --light: #eee;
+    --pixel: "Silkscreen", monospace;
+    --mono: "JetBrains Mono", monospace;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--light);
+    font-family: var(--mono);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-x: hidden;
+  }
+  header {
+    width: 100%;
+    max-width: 900px;
+    padding: 32px 24px 16px;
+    text-align: center;
+  }
+  h1 {
+    font-family: var(--pixel);
+    font-size: clamp(32px, 5vw, 48px);
+    color: var(--lime);
+    letter-spacing: 0.05em;
+    font-weight: 400;
+  }
+  .tagline {
+    font-family: var(--pixel);
+    font-size: 16px;
+    margin-top: 8px;
+    color: var(--light);
+  }
+  .tagline em {
+    font-style: normal;
+    color: var(--lime);
+  }
+  .desc {
+    max-width: 620px;
+    margin: 12px auto 0;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--dim);
+  }
+
+  /* Interactive toolbar */
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    align-items: center;
+    margin: 20px 0 12px;
+  }
+  .pill-group {
+    display: inline-flex;
+    border: 1px dotted var(--border);
+    padding: 3px;
+    gap: 4px;
+    background: #111;
+  }
+  .pill {
+    font-family: var(--pixel);
+    font-size: 12px;
+    padding: 6px 14px;
+    background: transparent;
+    color: var(--dim);
+    border: 0;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .pill:hover {
+    color: var(--light);
+  }
+  .pill.active {
+    background: var(--lime);
+    color: #0a0a0a;
+  }
+  .stats {
+    font-size: 12px;
+    color: var(--dim);
+    display: flex;
+    gap: 16px;
+    margin-top: 4px;
+    font-family: var(--mono);
+  }
+  .stats span strong {
+    color: var(--lime);
+    font-weight: normal;
+  }
+
+  /* 3D Canvas container */
+  .stage {
+    width: 100%;
+    max-width: 920px;
+    height: 560px;
+    position: relative;
+    cursor: grab;
+    touch-action: pan-y;
+  }
+  .stage:active {
+    cursor: grabbing;
+  }
+  .stage canvas {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
+  }
+  .hint {
+    margin-top: 10px;
+    margin-bottom: 32px;
+    font-size: 12px;
+    color: var(--dim);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Motion</h1>
+  <p class="tagline">Draw a shape. <em>Run it.</em></p>
+  <p class="desc">Upload or sketch any SVG. Motion maps it onto real street geometry, trims impossible turns, and creates a runnable GPS route.</p>
+
+  <div class="toolbar">
+    <div class="pill-group" role="tablist">
+      <button class="pill active" data-shape="capybara">Capybara</button>
+      <button class="pill" data-shape="alpaca">Alpaca</button>
+      <button class="pill" data-shape="apple">Apple</button>
+      <button class="pill" data-shape="horse">Horse</button>
+    </div>
+  </div>
+
+  <div class="stats" id="stats">
+    <span>Dist: <strong id="stat-dist">8.4 km</strong></span>
+    <span>Score: <strong id="stat-score">96% match</strong></span>
+    <span>Pace: <strong>5:12 /km</strong></span>
+  </div>
+</header>
+
+<div class="stage" id="stage" role="img" aria-label="Interactive 3D isometric city diorama with a runner tracing a GPS route"></div>
+<p class="hint">drag to orbit · click shapes to switch route</p>
+
+<script src="assets/capybara.js"></script>
+<script src="assets/routes.js"></script>
+<script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+const host = document.getElementById("stage");
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+// Shape stats metadata
+const META = {
+  capybara: { dist: "8.4 km", score: "96% match" },
+  alpaca:   { dist: "11.2 km", score: "92% match" },
+  apple:    { dist: "5.6 km", score: "97% match" },
+  horse:    { dist: "13.8 km", score: "89% match" }
+};
+
+// Route coordinates converter: maps 512x512 box to world coords [-7.5, 7.5]
+const toLoops = raw => {
+  if (Array.isArray(raw[0]) && Array.isArray(raw[0][0])) {
+    return raw.map(pts => [...pts, pts[0]].map(([x, y]) => [(x - 256) / 32, (y - 256) / 32]));
+  }
+  return [[...raw, raw[0]].map(([x, y]) => [(x - 256) / 32, (y - 256) / 32])];
+};
+
+const SHAPES = {
+  capybara: toLoops(window.CAPY),
+  alpaca:   toLoops(window.ROUTES.alpaca),
+  apple:    toLoops(window.ROUTES.apple),
+  horse:    toLoops(window.ROUTES.horse)
+};
+
+let currentShape = "capybara";
+
+// --- Scene Setup ---
+const scene = new THREE.Scene();
+
+// Camera: Isometric perspective (low FOV, elevated angle)
+const cam = new THREE.PerspectiveCamera(28, host.clientWidth / host.clientHeight, 0.1, 100);
+cam.position.set(22, 24, 24);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(host.clientWidth, host.clientHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+host.append(renderer.domElement);
+
+const controls = new OrbitControls(cam, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.05;
+controls.enablePan = false;
+controls.enableZoom = false;
+// Restrict polar angle so the user stays in an architectural isometric view
+controls.minPolarAngle = Math.PI / 6;
+controls.maxPolarAngle = Math.PI / 2.3;
+controls.target.set(0, 0, 0);
+
+// --- Lighting ---
+scene.add(new THREE.AmbientLight(0xffffff, 0.65));
+const sun = new THREE.DirectionalLight(0xffffff, 1.4);
+sun.position.set(15, 25, 10);
+sun.castShadow = true;
+sun.shadow.mapSize.width = 1024;
+sun.shadow.mapSize.height = 1024;
+sun.shadow.camera.near = 0.5;
+sun.shadow.camera.far = 60;
+const d = 14;
+sun.shadow.camera.left = -d;
+sun.shadow.camera.right = d;
+sun.shadow.camera.top = d;
+sun.shadow.camera.bottom = -d;
+scene.add(sun);
+
+// Subtle fill light for shadows
+const fill = new THREE.DirectionalLight(0x7fe86e, 0.15);
+fill.position.set(-15, 10, -15);
+scene.add(fill);
+
+// --- Diorama Plinth / Base ---
+const SLAB_SIZE = 17.6;
+const SLAB_THICKNESS = 1.2;
+
+// Concrete / dark foundation
+const baseGeo = new THREE.BoxGeometry(SLAB_SIZE, SLAB_THICKNESS, SLAB_SIZE);
+const baseMat = new THREE.MeshLambertMaterial({ color: 0x161616 });
+const baseMesh = new THREE.Mesh(baseGeo, baseMat);
+baseMesh.position.y = -SLAB_THICKNESS / 2;
+baseMesh.receiveShadow = true;
+scene.add(baseMesh);
+
+// Ground surface (streets & pavement)
+const groundGeo = new THREE.PlaneGeometry(SLAB_SIZE, SLAB_SIZE);
+const groundMat = new THREE.MeshLambertMaterial({ color: 0x1c1c1c });
+const ground = new THREE.Mesh(groundGeo, groundMat);
+ground.rotation.x = -Math.PI / 2;
+ground.position.y = 0.001;
+ground.receiveShadow = true;
+scene.add(ground);
+
+// Plinth subtle perimeter lip
+const rimGeo = new THREE.BoxGeometry(SLAB_SIZE + 0.3, 0.15, SLAB_SIZE + 0.3);
+const rimMat = new THREE.MeshLambertMaterial({ color: 0x242424 });
+const rimMesh = new THREE.Mesh(rimGeo, rimMat);
+rimMesh.position.y = -0.07;
+scene.add(rimMesh);
+
+// --- City Blocks Grid ---
+// Coarser, cleaner grid: 20x20 blocks instead of 40x40
+const N = 20;
+const C = SLAB_SIZE / N; // ~0.88 units per cell
+const BLOCK_SIZE = C * 0.72; // leaves wide, distinct ~0.25 unit streets
+
+const blockGeo = new THREE.BoxGeometry(1, 1, 1);
+const blockMat = new THREE.MeshLambertMaterial({ color: 0x2b2b2b });
+const tallBlockMat = new THREE.MeshLambertMaterial({ color: 0x363636 });
+const parkMat = new THREE.MeshLambertMaterial({ color: 0x1f2e22 }); // subtle dark park green
+
+const blocks = new THREE.InstancedMesh(blockGeo, blockMat, N * N);
+blocks.castShadow = true;
+blocks.receiveShadow = true;
+scene.add(blocks);
+
+// Distance helper to check route proximity
+function distToRoute(lines, px, pz) {
+  let best = Infinity;
+  for (const line of lines) {
+    for (let i = 1; i < line.length; i++) {
+      const [ax, az] = line[i - 1], [bx, bz] = line[i];
+      const dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz || 1;
+      const t = Math.max(0, Math.min(1, ((px - ax) * dx + (pz - az) * dz) / l2));
+      const d = Math.hypot(px - ax - t * dx, pz - az - t * dz);
+      if (d < best) best = d;
+    }
+  }
+  return best;
+}
+
+// Store city layout data
+let seed = 42;
+const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+const cityData = [];
+for (let i = 0; i < N; i++) {
+  for (let j = 0; j < N; j++) {
+    const x = (i + 0.5) * C - SLAB_SIZE / 2;
+    const z = (j + 0.5) * C - SLAB_SIZE / 2;
+    // Edge proximity: slightly taller toward edges/corners, lower in center
+    const edgeDist = Math.max(Math.abs(x), Math.abs(z)) / (SLAB_SIZE / 2);
+    // Baseline height
+    let baseH = 0.2 + Math.pow(rnd(), 2.2) * 1.0;
+    if (edgeDist > 0.7 && rnd() < 0.25) baseH = 1.4 + rnd() * 1.2; // occasional perimeter towers
+    const isPark = rnd() < 0.05 && baseH < 0.4;
+    cityData.push({ i, j, x, z, baseH, isPark });
+  }
+}
+
+const dummy = new THREE.Matrix4();
+const vScale = new THREE.Vector3();
+const vPos = new THREE.Vector3();
+const qIdentity = new THREE.Quaternion();
+
+function updateCityBuildings(shapeName) {
+  const routes = SHAPES[shapeName];
+  let idx = 0;
+  for (const b of cityData) {
+    const d = distToRoute(routes, b.x, b.z);
+    // If the building is on or immediately touching the route, keep it flat/cleared!
+    // This guarantees the route is NEVER occluded!
+    let h = b.baseH;
+    if (d < BLOCK_SIZE * 0.7) {
+      h = 0.02; // cleared into street/plaza level
+    } else if (d < BLOCK_SIZE * 1.1) {
+      h = Math.min(h, 0.15); // gentle low-rise buffer
+    }
+
+    vScale.set(BLOCK_SIZE, h, BLOCK_SIZE);
+    vPos.set(b.x, h / 2, b.z);
+    dummy.compose(vPos, qIdentity, vScale);
+    blocks.setMatrixAt(idx++, dummy);
+  }
+  blocks.instanceMatrix.needsUpdate = true;
+}
+
+updateCityBuildings(currentShape);
+
+// --- Active Route Mesh & Runner ---
+const routeMat = new THREE.MeshBasicMaterial({ color: 0x7fe86e });
+const routeGroup = new THREE.Group();
+scene.add(routeGroup);
+
+const runnerGeo = new THREE.SphereGeometry(0.18, 16, 16);
+const runnerMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+const runner = new THREE.Mesh(runnerGeo, runnerMat);
+runner.position.y = 0.18;
+scene.add(runner);
+
+// Runner pulse ring
+const ringGeo = new THREE.RingGeometry(0.24, 0.38, 24);
+ringGeo.rotateX(-Math.PI / 2);
+const ringMat = new THREE.MeshBasicMaterial({ color: 0x7fe86e, transparent: true, opacity: 0.8, side: THREE.DoubleSide });
+const runnerRing = new THREE.Mesh(ringGeo, ringMat);
+runnerRing.position.y = 0.06;
+scene.add(runnerRing);
+
+let segments = [];
+let totalRouteLength = 0;
+
+function buildRoute(shapeName) {
+  // Clear old route segments
+  while (routeGroup.children.length > 0) {
+    const m = routeGroup.children.pop();
+    m.geometry.dispose();
+  }
+  segments = [];
+  totalRouteLength = 0;
+
+  const routes = SHAPES[shapeName];
+  const slab = new THREE.BoxGeometry(1, 0.05, 0.18).translate(0.5, 0, 0);
+
+  for (const line of routes) {
+    for (let i = 1; i < line.length; i++) {
+      const a = new THREE.Vector3(line[i - 1][0], 0.04, line[i - 1][1]);
+      const b = new THREE.Vector3(line[i][0], 0.04, line[i][1]);
+      const dir = b.clone().sub(a);
+      const len = dir.length();
+      if (len < 0.001) continue;
+      dir.normalize();
+
+      const mesh = new THREE.Mesh(slab, routeMat);
+      mesh.position.copy(a);
+      mesh.quaternion.setFromRotationMatrix(
+        new THREE.Matrix4().makeBasis(dir, new THREE.Vector3(0, 1, 0), dir.clone().cross(new THREE.Vector3(0, 1, 0)))
+      );
+      routeGroup.add(mesh);
+      segments.push({ a, b, len, mesh });
+      totalRouteLength += len;
+    }
+  }
+}
+
+buildRoute(currentShape);
+
+// Route tracing animation
+function setRouteProgress(t) {
+  let left = t * totalRouteLength;
+  for (const g of segments) {
+    const k = Math.max(0, Math.min(1, left / g.len));
+    g.mesh.visible = k > 0;
+    g.mesh.scale.x = Math.max(k * g.len, 1e-4);
+    if (k > 0) {
+      runner.position.lerpVectors(g.a, g.b, k).setY(0.18);
+      runnerRing.position.x = runner.position.x;
+      runnerRing.position.z = runner.position.z;
+    }
+    left -= g.len;
+  }
+}
+
+// --- Shape Switcher Logic ---
+const pills = document.querySelectorAll(".pill");
+const statDist = document.getElementById("stat-dist");
+const statScore = document.getElementById("stat-score");
+
+function switchShape(name) {
+  if (name === currentShape) return;
+  currentShape = name;
+  pills.forEach(p => p.classList.toggle("active", p.dataset.shape === name));
+  statDist.textContent = META[name].dist;
+  statScore.textContent = META[name].score;
+
+  updateCityBuildings(name);
+  buildRoute(name);
+  traceStartTime = performance.now();
+}
+
+pills.forEach(btn => {
+  btn.onclick = () => switchShape(btn.dataset.shape);
+});
+
+// --- Animation Loop ---
+let traceStartTime = performance.now();
+const CYCLE_MS = 8000;
+const TRACE_MS = 6000;
+
+function animate(now) {
+  requestAnimationFrame(animate);
+
+  const elapsed = (now - traceStartTime) % CYCLE_MS;
+  const k = reduced ? 1 : Math.min(1, elapsed / TRACE_MS);
+  const t = k * k * (3 - 2 * k); // smooth cubic ease
+
+  setRouteProgress(t);
+
+  // Runner pulse ring
+  const pulse = (now % 1000) / 1000;
+  runnerRing.scale.setScalar(1 + pulse * 0.8);
+  ringMat.opacity = Math.max(0, 0.8 * (1 - pulse));
+
+  // Subtle slow idle float of entire scene
+  if (!reduced) {
+    baseMesh.position.y = -SLAB_THICKNESS / 2 + Math.sin(now / 1600) * 0.08;
+    ground.position.y = 0.001 + Math.sin(now / 1600) * 0.08;
+    rimMesh.position.y = -0.07 + Math.sin(now / 1600) * 0.08;
+    blocks.position.y = Math.sin(now / 1600) * 0.08;
+    routeGroup.position.y = Math.sin(now / 1600) * 0.08;
+    runner.position.y = 0.18 + Math.sin(now / 1600) * 0.08;
+    runnerRing.position.y = 0.06 + Math.sin(now / 1600) * 0.08;
+  }
+
+  controls.update();
+  renderer.render(scene, cam);
+}
+
+requestAnimationFrame(animate);
+
+// Resize handler
+window.addEventListener("resize", () => {
+  const w = host.clientWidth;
+  const h = host.clientHeight;
+  cam.aspect = w / h;
+  cam.updateProjectionMatrix();
+  renderer.setSize(w, h);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,718 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chieler Li</title>
+<meta name="description" content="Chieler Li, Math + CS at UW-Madison. Motion, Scene / Difference, Papershade, Tandem.">
+<meta property="og:title" content="Chieler Li">
+<meta property="og:description" content="Chieler Li, Math + CS at UW-Madison. Motion, Scene / Difference, Papershade, Tandem.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen&family=Unbounded:wght@700;800&family=JetBrains+Mono:wght@400;700&family=Literata:opsz,wght@7..72,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #f6f3ec;
+    --ink: #4f4f4f;
+    --dark: #222;
+    --light: #ececec;
+    --dim: #6b6b6b;
+    --lime: oklch(0.86 0.2 142);
+    --pixel: "Silkscreen", monospace;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { font: 15px/1.6 var(--mono); background: var(--cream); color: var(--ink); }
+  a { color: inherit; }
+  section { padding: 150px 24px; }
+  .light { background: var(--cream); color: var(--ink); }
+  .dark { background: var(--dark); color: var(--light); }
+  .wrap { max-width: 1040px; margin: 0 auto; }
+  .box { border: 1px dotted currentColor; border-color: color-mix(in srgb, currentColor 35%, transparent); }
+  h1, h2 { font-family: var(--pixel); font-weight: 400; letter-spacing: 0.02em; line-height: 1.1; }
+  h2 { font-size: clamp(32px, 6vw, 56px); text-align: center; }
+  .head { max-width: 660px; margin: 0 auto 48px; padding: 28px 24px; text-align: center; }
+  .head p { margin-top: 12px; color: color-mix(in srgb, currentColor 72%, transparent); }
+  .tag { font-family: var(--pixel); font-size: 15px; margin-top: 6px; display: block; }
+  .links { margin-top: 14px; font-size: 13px; display: flex; gap: 18px; justify-content: center; }
+  .links a { text-underline-offset: 4px; }
+
+  /* Hero */
+  .hero { min-height: 100vh; display: grid; place-items: center; text-align: center; }
+  .hero h1 { font-size: clamp(56px, 11vw, 120px); }
+  .hero p { font-family: var(--pixel); font-size: clamp(16px, 2.6vw, 28px); margin-top: 10px; animation: floatUp 1.4s 0.5s cubic-bezier(.2,.7,.2,1) both; }
+  @keyframes floatUp { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: none; } }
+  /* Blue jay perches on the C. Tune bottom/left if the font metrics shift. */
+  .hero h1 { position: relative; z-index: 0; }
+  .perch { position: relative; }
+  /* z-index -1 inside the h1 so the tail hangs behind the C's stroke. */
+  .jay { position: absolute; z-index: -1; width: 0.72em; left: -0.18em; top: -0.113em; overflow: visible; }
+  .jay .up { display: none; }
+  .jay.flying .up { display: inline; } .jay.flying .down { display: none; }
+
+  /* Block bleed between light and dark sections */
+  .bleed { display: block; width: 100%; height: 96px; image-rendering: pixelated; }
+
+  /* Motion */
+  .trace { width: min(560px, 100%); height: auto; display: block; margin: 0 auto; overflow: visible; }
+  .trace text { font: 400 104px var(--pixel); fill: transparent; stroke: var(--lime); stroke-width: 1.4; stroke-dasharray: 700; stroke-dashoffset: 700; }
+  .seen .trace text { animation: traceText 2.6s ease-in-out forwards; }
+  @keyframes traceText { 70% { stroke-dashoffset: 0; fill: transparent; } 100% { stroke-dashoffset: 0; fill: var(--lime); } }
+  .motion-pitch { font: 400 clamp(16px, 2.2vw, 22px)/1.4 var(--pixel); margin-top: 12px; }
+  .motion-pitch em { font-style: normal; color: var(--lime); }
+
+  /* Motion: an isometric city diorama with a traced route through its streets. */
+  #motion { --night: #0a0a0a; background: var(--night); padding: 56px 24px 48px; min-height: 100vh; }
+  #motion .head { margin-bottom: 16px; padding: 18px 24px; }
+  #motion .trace { width: min(340px, 100%); }
+  .motion-body { display: grid; grid-template-columns: 1fr 200px; gap: 24px; align-items: center; }
+  .stage { height: clamp(420px, calc(100vh - 330px), 820px); position: relative; cursor: grab; touch-action: pan-y; }
+  .stage:active { cursor: grabbing; }
+  .stage canvas { display: block; width: 100% !important; height: 100% !important; }
+  .motion-side { display: grid; gap: 20px; align-content: center; }
+  .motion-pills { display: grid; border: 1px dotted color-mix(in srgb, currentColor 35%, transparent); padding: 2px; gap: 2px; background: #111; }
+  .motion-pill { font: 12px var(--pixel); padding: 8px 14px; background: none; border: 0; color: var(--dim); cursor: pointer; text-align: left; transition: all .15s ease; }
+  .motion-pill:hover { color: var(--light); }
+  .motion-pill.active { background: var(--lime); color: #0a0a0a; }
+  .motion-stats { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; font-size: 12px; margin: 0; }
+  .motion-stats dt { color: var(--dim); }
+  .motion-stats dd { margin: 0; color: var(--lime); }
+  .hint { font-size: 12px; color: var(--dim); }
+
+  /* Scene / Difference */
+  .difftitle { display: inline-grid; text-align: left; }
+  .difftitle span { padding: 2px 18px 2px 10px; }
+  .difftitle .del { background: #f8717122; } .difftitle .add { background: #4ade8022; }
+  .git { margin: 0 auto; background: #1a1a1a; font-size: 13px; }
+  .tabs { display: flex; border-bottom: 1px dotted #ffffff30; }
+  .tabs button { font: inherit; color: var(--dim); background: none; border: 0; padding: 10px 16px; cursor: pointer; border-right: 1px dotted #ffffff30; }
+  .tabs button[aria-selected="true"] { color: var(--light); background: #222; }
+  .tabs button:focus-visible { outline: 1px solid var(--lime); outline-offset: -3px; }
+  .diffhead { padding: 10px 16px; line-height: 1.5; }
+  .del { color: #f87171; } .add { color: #4ade80; } .hunk { color: #60a5fa; }
+  .git iframe { display: block; width: 100%; height: 720px; border: 0; background: #111; }
+  .git iframe[hidden] { display: none; }
+  .videos { height: 720px; display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #ffffff20; }
+  .videos[hidden] { display: none; }
+  .videos figure { margin: 0; background: #000; display: grid; grid-template-rows: 1fr auto; min-height: 0; }
+  .videos video { width: 100%; height: 100%; min-height: 0; object-fit: contain; }
+  .videos figcaption { padding: 6px 12px; background: #111; }
+
+  /* Papershade */
+  .shade-stage { background: #161616; color: var(--light); padding: 80px 24px; display: grid; justify-items: center; gap: 18px; }
+  /* Page-wide Papershade: a warm tint plus grain, plain alpha (no blend modes) so scrolling stays cheap. */
+  .paper { position: fixed; inset: 0; z-index: 50; pointer-events: none; opacity: 0; transition: opacity .6s;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .27 0 0 0 0 .18 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"), #ffcf8c1f; }
+  .shaded .paper { opacity: 1; }
+  .flash { position: fixed; inset: 0; z-index: 51; pointer-events: none; background: #fff; opacity: 0; }
+  .pill { position: fixed; right: 18px; bottom: 18px; z-index: 52; font: 13px var(--pixel); color: #161616; background: var(--light); border: 0; padding: 8px 12px; cursor: pointer; display: none; }
+  .shaded .pill { display: block; }
+  .toggle { display: flex; border: 1px dotted #ffffff40; }
+  .toggle button { font: 13px var(--pixel); color: var(--dim); background: none; border: 0; padding: 10px 22px; cursor: pointer; }
+  .toggle button[aria-pressed="true"] { color: #161616; background: var(--light); }
+  .toggle button:focus-visible { outline: 1px solid var(--lime); }
+  .caption { font-size: 12px; color: var(--dim); }
+
+  /* Tandem */
+  .tmux { max-width: 1000px; margin: 0 auto; background: #0b0b14; font-size: 12px; line-height: 1.45; color: #d6d6d6; border-radius: 10px; overflow: hidden; box-shadow: 0 24px 50px rgba(0, 0, 0, 0.3); border: 1px solid rgba(0, 0, 0, 0.12); }
+  .tmux .bar { display: flex; gap: 8px; padding: 9px 12px; background: #2a2a2e; }
+  .tmux .bar i { width: 11px; height: 11px; border-radius: 50%; background: #ff5f57; }
+  .tmux .bar i:nth-child(2) { background: #febc2e; } .tmux .bar i:nth-child(3) { background: #28c840; }
+  .tmux .bar span { margin: 0 auto; color: #aaa; font-size: 11px; transform: translateX(-20px); }
+  .tree { background: #b5b52a; color: #111; padding: 0 8px; }
+  .panes { display: grid; grid-template-columns: 1.3fr 1fr 1fr; height: 480px; padding: 4px; gap: 4px; }
+  .pane { border: 1px solid #ffffff30; display: flex; flex-direction: column; min-width: 0; transition: border-color .2s; }
+  .pane.active { border-color: #4ade80; }
+  .pane .title { align-self: center; margin-top: -9px; padding: 0 6px; background: #0b0b14; color: #8b8bff; }
+  .pane.active .title { color: #4ade80; }
+  .pane .log { flex: 1; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; padding: 4px 8px; }
+  .pane .log div { white-space: pre-wrap; overflow-wrap: anywhere; animation: pop .25s; }
+  .pane .prompt { border-top: 1px solid #ffffff20; padding: 4px 8px; min-height: 26px; }
+  .pane .prompt::after { content: "▌"; animation: blink 1s steps(1) infinite; }
+  @keyframes pop { from { opacity: 0; transform: translateY(4px); } }
+  @keyframes blink { 50% { opacity: 0; } }
+  .env { color: #facc15; } .ok { color: #4ade80; } .ran { color: #93c5fd; } .kn { color: #c084fc; }
+  .status { background: #22a32a; color: #071; color: #031a03; padding: 0 8px; display: flex; justify-content: space-between; }
+
+  footer.site { padding: 48px 24px 64px; text-align: center; font-size: 13px; }
+  footer.site .footer-links { display: flex; flex-direction: column; gap: 10px; align-items: center; }
+  footer.site a { text-underline-offset: 4px; color: color-mix(in srgb, currentColor 75%, transparent); transition: color .15s ease; }
+  footer.site a:hover { color: var(--light); }
+
+  @media (max-width: 720px) {
+    #motion { padding: 56px 16px 48px; }
+    .motion-body { grid-template-columns: 1fr; }
+    .stage { height: 440px; }
+    .panes { grid-template-columns: 1fr; height: auto; }
+    .pane .log { min-height: 120px; }
+
+    .git iframe, .videos { height: 460px; }
+    .videos { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; animation-delay: 0s !important; }
+  }
+</style>
+</head>
+<body>
+
+<section class="light hero">
+  <div>
+    <h1><span class="perch">C<svg class="jay" id="jay" viewBox="0 0 18 19" aria-hidden="true" shape-rendering="crispEdges"></svg></span>hieler Li</h1>
+    <p>Junior · Math, CS · UW-Madison</p>
+  </div>
+</section>
+
+<canvas class="bleed" data-from="#f6f3ec" data-to="#222222" aria-hidden="true"></canvas>
+
+<section class="dark" id="scene">
+  <div class="wrap">
+    <div class="head box">
+      <h2 class="difftitle" aria-label="Scene / Difference"><span class="del">- Scene</span><span class="add">+ Difference</span></h2>
+      <p>Two casual phone videos of the same room, recorded at different times. It reconstructs both into one metric 3D frame and reports every object that was added, removed, or moved, in plain language.</p>
+      <div class="links"><a href="https://github.com/Chieler/Scene-difference" target="_blank" rel="noopener noreferrer">github</a><a href="https://chieler.github.io/Scene-difference/" target="_blank" rel="noopener noreferrer">full demo</a></div>
+    </div>
+    <div class="git box">
+      <div class="tabs" role="tablist" aria-label="Scene views">
+        <button role="tab" aria-selected="true" data-view="diff">diff</button>
+        <button role="tab" aria-selected="false" data-view="A" tabindex="-1">a/before</button>
+        <button role="tab" aria-selected="false" data-view="B" tabindex="-1">b/after</button>
+        <button role="tab" aria-selected="false" data-view="video" tabindex="-1">video</button>
+      </div>
+      <div class="diffhead">
+        <div class="del">--- a/bathroom (video A)</div>
+        <div class="add">+++ b/bathroom (video B)</div>
+        <div class="hunk">@@ moved 3.10 m: Listerine mouthwash bottle @@ drag to orbit</div>
+      </div>
+      <iframe id="viewer" src="assets/scene-viewer.html?v=9" title="Interactive 3D point cloud of the room, showing detected changes" loading="lazy"></iframe>
+      <div class="videos" id="videos" hidden>
+        <figure><video src="assets/scene-before.mp4" muted loop playsinline preload="none"></video><figcaption class="del">a/ before.mp4</figcaption></figure>
+        <figure><video src="assets/scene-after.mp4" muted loop playsinline preload="none"></video><figcaption class="add">b/ after.mp4</figcaption></figure>
+      </div>
+    </div>
+  </div>
+</section>
+
+<canvas class="bleed" data-from="#222222" data-to="#f6f3ec" aria-hidden="true"></canvas>
+
+<section class="light" id="tandem">
+  <div class="wrap">
+    <div class="head box">
+      <h2>Tandem</h2>
+      <span class="tag">Claude, Codex and agy as one team</span>
+      <p>A leader agent spawns workers in any harness, hands them tasks, and gets answers back in its own session. tmux carries every message; SQLite holds the shared knowledge. No daemon.</p>
+      <div class="links"><a href="https://github.com/Chieler/Tandem" target="_blank" rel="noopener noreferrer">github</a></div>
+    </div>
+  </div>
+  <div class="tmux" aria-label="Animated demo: agents passing messages between tmux panes" role="img">
+    <div class="bar"><i></i><i></i><i></i><span>tandem — tmux a</span></div>
+    <div class="tree">(0) - tandem: 3 windows (attached)</div>
+    <div class="panes">
+      <div class="pane" data-pane="claude"><span class="title">0:claude (leader)</span><div class="log"></div><div class="prompt"></div></div>
+      <div class="pane" data-pane="codex"><span class="title">1:codex</span><div class="log"></div><div class="prompt"></div></div>
+      <div class="pane" data-pane="agy"><span class="title">2:agy</span><div class="log"></div><div class="prompt"></div></div>
+    </div>
+    <div class="status"><span>[tandem] 0:claude* 1:codex 2:agy</span><span>"mac.lan" 21:07 18-Oct-26</span></div>
+  </div>
+</section>
+
+<canvas class="bleed" data-from="#f6f3ec" data-to="#0a0a0a" aria-hidden="true"></canvas>
+
+<section class="dark" id="motion">
+  <div class="wrap">
+    <div class="head box">
+      <svg class="trace" viewBox="0 0 640 130" role="img" aria-label="Motion">
+        <text x="50%" y="108" text-anchor="middle">Motion</text>
+      </svg>
+      <p class="motion-pitch">Draw a shape. <em>Run it.</em></p>
+      <p>Upload or sketch any SVG and Motion routes it onto the real street grid near you, then exports the GPX.</p>
+      <div class="links"><a href="https://motiongpx.com/" target="_blank" rel="noopener noreferrer">motiongpx.com</a></div>
+    </div>
+    <div class="motion-body">
+      <div class="stage" id="stage" role="img" aria-label="Interactive 3D city with a runner tracing a real GPS route through its streets. Drag to rotate."></div>
+      <aside class="motion-side">
+        <div class="motion-pills" role="tablist" aria-label="Route shapes">
+          <button class="motion-pill active" data-shape="capybara">Capybara</button>
+          <button class="motion-pill" data-shape="horse">Horse</button>
+          <button class="motion-pill" data-shape="elephant">Elephant</button>
+        </div>
+        <dl class="motion-stats">
+          <dt>Dist</dt><dd id="stat-dist">10.1 km</dd>
+          <dt>City</dt><dd id="stat-city">San Francisco</dd>
+        </dl>
+        <p class="hint">drag to orbit</p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<canvas class="bleed" data-from="#0a0a0a" data-to="#f6f3ec" aria-hidden="true"></canvas>
+
+<section class="light" id="papershade">
+  <div class="wrap">
+    <div class="head box">
+      <h2>Papershade</h2>
+      <span class="tag">Kindle texture, on your Mac</span>
+      <p>A macOS menu-bar app that gives every display a warm, matte, paper-like finish.</p>
+      <div class="links"><a href="https://github.com/Chieler/PaperShade" target="_blank" rel="noopener noreferrer">github</a><a href="https://github.com/Chieler/PaperShade/raw/main/Papershade.dmg" target="_blank" rel="noopener noreferrer">download .dmg</a></div>
+    </div>
+    <div class="shade-stage">
+      <div class="toggle" role="group" aria-label="Papershade this page">
+        <button aria-pressed="true" data-mode="before">Off</button>
+        <button aria-pressed="false" data-mode="after">Papershade this page</button>
+      </div>
+      <p class="caption" id="cap">This whole site, on a stock display.</p>
+    </div>
+  </div>
+</section>
+
+<canvas class="bleed" data-from="#f6f3ec" data-to="#222222" aria-hidden="true"></canvas>
+
+<div class="paper" aria-hidden="true"></div>
+<div class="flash" aria-hidden="true"></div>
+<button class="pill" id="pill" aria-label="Turn Papershade off">P · off</button>
+
+<footer class="site dark">
+  <div class="footer-links">
+    <a href="https://github.com/Chieler" target="_blank" rel="noopener noreferrer">github.com/Chieler</a>
+    <a href="https://www.linkedin.com/in/chieler-li0210/" target="_blank" rel="noopener noreferrer">linkedin.com/in/chieler-li0210</a>
+    <a href="mailto:chielerli@gmail.com">chielerli@gmail.com</a>
+  </div>
+</footer>
+
+<script src="assets/faces.js"></script>
+<script>
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+// Block bleed: pixel blocks of the next section's color, denser toward the bottom.
+function drawBleeds() {
+  document.querySelectorAll(".bleed").forEach(c => {
+    const s = 16, w = Math.ceil(c.clientWidth / s), h = 6;
+    c.width = w; c.height = h;
+    const g = c.getContext("2d");
+    g.fillStyle = c.dataset.from; g.fillRect(0, 0, w, h);
+    g.fillStyle = c.dataset.to;
+    let seed = 7;
+    const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++)
+      if (rnd() < (y + 0.5) / h) g.fillRect(x, y, 1, 1);
+  });
+}
+drawBleeds();
+addEventListener("resize", drawBleeds);
+
+// Blue jay: pixel sprite flies in from the left and lands on the C.
+(() => {
+  const jay = document.getElementById("jay");
+  const colors = { B: "#3d6fd6", L: "#8db3ff", W: "#f2f2f2", K: "#1c1c1c", k: "#3a3a3a" };
+  const sprite = (rows, cls = "") => {
+    const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    if (cls) g.setAttribute("class", cls);
+    rows.forEach((row, y) => [...row].forEach((ch, x) => {
+      if (!colors[ch]) return;
+      const r = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+      r.setAttribute("x", x); r.setAttribute("y", y); r.setAttribute("width", 1); r.setAttribute("height", 1); r.setAttribute("fill", colors[ch]);
+      g.append(r);
+    }));
+    jay.append(g);
+  };
+  // Rows 0-12 sit above the C (feet on row 12); the tail angles down-left behind the letter.
+  sprite([
+    "............B.....",
+    "...........BB.....",
+    "...........BBB....",
+    "..........BBBBB...",
+    "..........BWKWWkk.",
+    "..........KWWWW...",
+    ".........BBKKKK...",
+    "........BBBBWWW...",
+    ".......BBBBWWWW...",
+    "......BBBBBWWWW...",
+    ".....BBBBBBBWWW...",
+    "....BBBBBBBBWW....",
+    "...BBB....K.K.....",
+    "..BBL.............",
+    "..BK..............",
+    ".BB...............",
+    ".BK...............",
+    "BB................",
+    "W.................",
+  ]);
+  sprite(["", "", "", "", "", "", "", "", ".........LL", "........LKL", ".......LLKLL", ".......LWLWL"], "down");
+  sprite(["", "", "", "....LL", "....LKL", ".....LKL", "......LLL", ".......LL"], "up");
+  if (reduced) return;
+  // One smooth curve: quadratic bezier from off-screen top-left, dipping below
+  // the perch and rising onto it, sampled with eased time so speed never jumps.
+  const DUR = 2400, x0 = -0.5 * innerWidth, y0 = -0.32 * innerHeight, cx = -0.12 * innerWidth, cy = 0.06 * innerHeight;
+  const ease = t => 1 - (1 - t) ** 3;
+  const frames = Array.from({ length: 41 }, (_, i) => {
+    const t = ease(i / 40), u = 1 - t;
+    return { transform: `translate(${u * u * x0 + 2 * u * t * cx}px, ${u * u * y0 + 2 * u * t * cy}px)` };
+  });
+  const fly = jay.animate(frames, { duration: DUR, delay: 900, fill: "backwards" });
+  // Flap fast at first, glide wings-up for the last stretch, fold on landing.
+  let flap;
+  setTimeout(() => {
+    flap = setInterval(() => jay.classList.toggle("flying"), 120);
+    setTimeout(() => { clearInterval(flap); jay.classList.add("flying"); }, DUR * 0.6);
+  }, 900);
+  fly.onfinish = () => {
+    jay.classList.remove("flying");
+    jay.animate([{ transform: "none" }, { transform: "translateY(-0.04em) scaleY(0.96)" }, { transform: "none" }],
+      { duration: 320, easing: "ease-out" });
+  };
+})();
+
+// Run fn while el is on screen.
+function whenVisible(el, fn) {
+  new IntersectionObserver(([e], o) => { if (e.isIntersecting) { o.disconnect(); fn(); } }, { threshold: 0.3 }).observe(el);
+}
+
+// Motion: trace the title once the section shows up; the cube module draws the routes.
+whenVisible(document.getElementById("motion"), () => document.getElementById("motion").classList.add("seen"));
+
+// Scene / Difference tabs drive the embedded viewer's own Diff / A / B radios (same origin).
+(() => {
+  const tabs = [...document.querySelectorAll('[role="tab"]')], viewer = document.getElementById("viewer");
+  const videos = document.getElementById("videos"), vids = [...videos.querySelectorAll("video")];
+  // The viewer redraws its point cloud every frame; pause it while it is off screen.
+  new IntersectionObserver(([e]) => { if (viewer.contentWindow) viewer.contentWindow.paused = !e.isIntersecting; }).observe(viewer);
+  const select = tab => {
+    tabs.forEach(t => { const on = t === tab; t.setAttribute("aria-selected", on); t.tabIndex = on ? 0 : -1; });
+    const v = tab.dataset.view === "video";
+    viewer.hidden = v; videos.hidden = !v;
+    vids.forEach(el => v && !reduced ? el.play().catch(() => {}) : el.pause());
+    if (!v) viewer.contentDocument?.querySelector(`input[name=m][value=${tab.dataset.view}]`)?.click();
+  };
+  tabs.forEach((t, i) => {
+    t.onclick = () => select(t);
+    t.onkeydown = e => {
+      const d = { ArrowRight: 1, ArrowLeft: -1 }[e.key];
+      if (d) { const n = tabs[(i + d + tabs.length) % tabs.length]; n.focus(); select(n); }
+    };
+  });
+})();
+
+// Papershade: tint and grain the whole page, with a quick flash between states.
+(() => {
+  const cap = document.getElementById("cap"), flash = document.querySelector(".flash");
+  const btns = [...document.querySelectorAll(".toggle button")];
+  const text = { before: "This whole site, on a stock display.", after: "Same pixels, now warm, matte and grainy. Scroll around." };
+  const set = mode => {
+    btns.forEach(b => b.setAttribute("aria-pressed", b.dataset.mode === mode));
+    cap.textContent = text[mode];
+    if (!reduced) flash.animate([{ opacity: 0 }, { opacity: 0.7 }, { opacity: 0 }], { duration: 320, easing: "ease-out" });
+    document.body.classList.toggle("shaded", mode === "after");
+  };
+  btns.forEach(b => b.onclick = () => set(b.dataset.mode));
+  document.getElementById("pill").onclick = () => set("before");
+})();
+
+// Tandem: scripted messages passed between tmux panes.
+(() => {
+  const panes = Object.fromEntries([...document.querySelectorAll(".pane")].map(p => [p.dataset.pane, p]));
+  const say = (pane, html, cls = "") => {
+    const log = panes[pane].querySelector(".log"), d = document.createElement("div");
+    d.className = cls; d.innerHTML = html; log.append(d);
+    while (log.children.length > 14) log.firstChild.remove();
+  };
+  const focus = pane => Object.values(panes).forEach(p => p.classList.toggle("active", p === panes[pane]));
+  const type = async (pane, s) => {
+    focus(pane);
+    const pr = panes[pane].querySelector(".prompt");
+    for (const ch of s) { pr.textContent += ch; await sleep(28); }
+    await sleep(250); pr.textContent = ""; say(pane, "&gt; " + s);
+  };
+  const script = async () => {
+    Object.values(panes).forEach(p => p.querySelector(".log").replaceChildren());
+    say("codex", "codex ready", "ok"); say("agy", "agy ready", "ok");
+    await sleep(700);
+    await type("claude", "spawn codex: audit parser.c for overflows");
+    say("claude", "● Called cntctr send → codex #a41", "ran"); await sleep(500);
+    focus("codex"); say("codex", "⟦cntctr #a41 from claude⟧ audit parser.c for overflows", "env"); await sleep(700);
+    say("codex", "● Ran rg -n memcpy src/", "ran"); await sleep(500);
+    await type("claude", "send agy: fuzz parse_header");
+    say("claude", "● Called cntctr send → agy #a42", "ran"); await sleep(500);
+    focus("agy"); say("agy", "⟦cntctr #a42 from claude⟧ fuzz parse_header", "env"); await sleep(600);
+    say("agy", "● Wrote fuzz/hdr.c", "ran");
+    focus("codex"); say("codex", "● Read parser.c:198-230", "ran"); await sleep(900);
+    say("codex", "reply #a41: off-by-one at parser.c:212, patch staged", "ok"); await sleep(400);
+    focus("claude"); say("claude", "⟵ codex #a41: off-by-one at parser.c:212, patch staged", "env"); await sleep(900);
+    focus("agy"); say("agy", "● Ran 1M iterations, 1 crash (len=0xffff)", "ran"); await sleep(700);
+    say("agy", "reply #a42: crash confirms #a41, repro in fuzz/crash-1", "ok"); await sleep(400);
+    focus("claude"); say("claude", "⟵ agy #a42: crash confirms #a41, repro in fuzz/crash-1", "env"); await sleep(800);
+    await type("claude", "note: parse_header len is u16, bound it before memcpy");
+    for (const p of Object.keys(panes)) say(p, "[cntctr knowledge: +1 insight]", "kn");
+    await sleep(3500);
+  };
+  whenVisible(document.querySelector(".tmux"), async () => { do await script(); while (!reduced); });
+})();
+</script>
+<script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}</script>
+<script type="module">
+// Motion: an architectural city diorama slab. Routes are traced through the streets
+// with dynamic building heights and interactive shape switching. Drag to rotate.
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+const host = document.getElementById("stage");
+const SLAB = 17.6;
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+// Real Motion output per shape (assets/faces.js): the route on OSM streets and a
+// building mask rasterized from the same street network, both in a 512 box.
+const FACES = window.FACES;
+const toLoops = route => [route.map(([x, y]) => [(x - 256) / 512 * SLAB, (y - 256) / 512 * SLAB])];
+const SHAPES = Object.fromEntries(Object.entries(FACES).map(([k, f]) => [k, toLoops(f.route)]));
+
+let currentShape = "capybara";
+
+// --- Scene & Camera ---
+const scene = new THREE.Scene();
+const cam = new THREE.PerspectiveCamera(28, host.clientWidth / host.clientHeight || 1, 0.1, 120);
+cam.position.set(22, 23, 24);
+
+const r = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+r.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+r.setSize(host.clientWidth, host.clientHeight);
+r.shadowMap.enabled = true;
+r.shadowMap.type = THREE.PCFSoftShadowMap;
+r.domElement.style.touchAction = "pan-y";
+host.append(r.domElement);
+
+const ctl = new OrbitControls(cam, r.domElement);
+ctl.enableDamping = true;
+ctl.dampingFactor = 0.05;
+ctl.enablePan = false;
+ctl.enableZoom = false;
+ctl.minPolarAngle = Math.PI / 6;
+ctl.maxPolarAngle = Math.PI / 2.35;
+ctl.target.set(0, 0, 0);
+
+// --- Lighting ---
+scene.add(new THREE.AmbientLight(0xffffff, 0.68));
+const sun = new THREE.DirectionalLight(0xffffff, 1.4);
+sun.position.set(16, 26, 12);
+sun.castShadow = true;
+sun.shadow.bias = -0.0008;
+sun.shadow.normalBias = 0.02;
+sun.shadow.mapSize.width = 2048;
+sun.shadow.mapSize.height = 2048;
+sun.shadow.camera.near = 0.5;
+sun.shadow.camera.far = 60;
+const d = 13;
+sun.shadow.camera.left = -d; sun.shadow.camera.right = d;
+sun.shadow.camera.top = d; sun.shadow.camera.bottom = -d;
+scene.add(sun);
+
+const fill = new THREE.DirectionalLight(0x7fe86e, 0.18);
+fill.position.set(-14, 10, -14);
+scene.add(fill);
+
+// --- Architectural Plinth / Foundation ---
+const world = new THREE.Group();
+scene.add(world);
+
+const SLAB_SIZE = SLAB;
+const SLAB_THICKNESS = 1.1;
+
+const baseGeo = new THREE.BoxGeometry(SLAB_SIZE, SLAB_THICKNESS, SLAB_SIZE);
+const baseMat = new THREE.MeshLambertMaterial({ color: 0x1b1b1b });
+const baseMesh = new THREE.Mesh(baseGeo, baseMat);
+baseMesh.position.y = -SLAB_THICKNESS / 2;
+baseMesh.receiveShadow = true;
+world.add(baseMesh);
+
+
+
+const rimGeo = new THREE.BoxGeometry(SLAB_SIZE + 0.28, 0.12, SLAB_SIZE + 0.28);
+const rimMat = new THREE.MeshLambertMaterial({ color: 0x242424 });
+const rimMesh = new THREE.Mesh(rimGeo, rimMat);
+rimMesh.position.y = -SLAB_THICKNESS + 0.04;   // below the top face, so the two never fight
+world.add(rimMesh);
+
+// --- City Blocks Grid ---
+// One cell per mask pixel; streets are mask zeros, so routes always run in real streets.
+const N = Math.sqrt(FACES.capybara.mask.length);
+const C = SLAB_SIZE / N;
+const BLOCK_SIZE = C * 0.86;
+
+const blockGeo = new THREE.BoxGeometry(1, 1, 1);
+const blockMat = new THREE.MeshLambertMaterial({ color: 0x2c2c2c });
+const blocks = new THREE.InstancedMesh(blockGeo, blockMat, N * N);
+blocks.castShadow = true;
+blocks.receiveShadow = true;
+world.add(blocks);
+
+let seed = 42;
+const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+const buildings = [];
+for (let j = 0; j < N; j++) {
+  for (let i = 0; i < N; i++) {
+    const x = (i + 0.5) * C - SLAB_SIZE / 2;
+    const z = (j + 0.5) * C - SLAB_SIZE / 2;
+    const baseH = 0.22 + Math.pow(rnd(), 2) * 1.0;
+    buildings.push({ idx: j * N + i, x, z, baseH, curH: 0, targetH: 0 });
+  }
+}
+
+const dummy = new THREE.Matrix4();
+const vScale = new THREE.Vector3();
+const vPos = new THREE.Vector3();
+const qIdentity = new THREE.Quaternion();
+
+function setBuildingTargets(shapeName) {
+  const mask = FACES[shapeName].mask;
+  for (const b of buildings) b.targetH = mask[b.idx] === "1" ? b.baseH : 0;
+}
+setBuildingTargets(currentShape);
+// Initialize current heights instantly for first frame
+buildings.forEach(b => { b.curH = b.targetH; });
+let dirty = true;
+
+// --- Active Route & Runner ---
+const routeMat = new THREE.MeshBasicMaterial({ color: 0x7fe86e });
+const routeGroup = new THREE.Group();
+world.add(routeGroup);
+
+const runner = new THREE.Mesh(
+  new THREE.SphereGeometry(0.18, 16, 16),
+  new THREE.MeshBasicMaterial({ color: 0xffffff })
+);
+world.add(runner);
+
+const ringGeo = new THREE.RingGeometry(0.24, 0.38, 24);
+ringGeo.rotateX(-Math.PI / 2);
+const ringMat = new THREE.MeshBasicMaterial({ color: 0x7fe86e, transparent: true, opacity: 0.8, side: THREE.DoubleSide });
+const runnerRing = new THREE.Mesh(ringGeo, ringMat);
+world.add(runnerRing);
+
+let segments = [];
+let totalRouteLength = 0;
+
+function buildRoute(shapeName) {
+  while (routeGroup.children.length > 0) {
+    const m = routeGroup.children.pop();
+    m.geometry.dispose();
+  }
+  segments = [];
+  totalRouteLength = 0;
+
+  const routes = SHAPES[shapeName];
+  const slab = new THREE.BoxGeometry(1, 0.05, 0.18).translate(0.5, 0, 0);
+
+  for (const line of routes) {
+    for (let i = 1; i < line.length; i++) {
+      const a = new THREE.Vector3(line[i - 1][0], 0.04, line[i - 1][1]);
+      const b = new THREE.Vector3(line[i][0], 0.04, line[i][1]);
+      const dir = b.clone().sub(a);
+      const len = dir.length();
+      if (len < 0.001) continue;
+      dir.normalize();
+
+      const mesh = new THREE.Mesh(slab, routeMat);
+      mesh.position.copy(a);
+      mesh.quaternion.setFromRotationMatrix(
+        new THREE.Matrix4().makeBasis(dir, new THREE.Vector3(0, 1, 0), dir.clone().cross(new THREE.Vector3(0, 1, 0)))
+      );
+      routeGroup.add(mesh);
+      segments.push({ a, b, len, mesh });
+      totalRouteLength += len;
+    }
+  }
+}
+buildRoute(currentShape);
+
+function setRouteProgress(t) {
+  let left = t * totalRouteLength;
+  for (const g of segments) {
+    const k = Math.max(0, Math.min(1, left / g.len));
+    g.mesh.visible = k > 0;
+    g.mesh.scale.x = Math.max(k * g.len, 1e-4);
+    if (k > 0) {
+      runner.position.lerpVectors(g.a, g.b, k).setY(0.18);
+      runnerRing.position.set(runner.position.x, 0.06, runner.position.z);
+    }
+    left -= g.len;
+  }
+}
+
+// --- Controls UI ---
+const pills = document.querySelectorAll(".motion-pill");
+const statDist = document.getElementById("stat-dist");
+const statCity = document.getElementById("stat-city");
+
+let traceStartTime = performance.now();
+
+function switchShape(name) {
+  if (name === currentShape) return;
+  currentShape = name;
+  pills.forEach(p => p.classList.toggle("active", p.dataset.shape === name));
+  statDist.textContent = FACES[name].km + " km";
+  statCity.textContent = FACES[name].where;
+
+  setBuildingTargets(name);
+  dirty = true;
+  buildRoute(name);
+  traceStartTime = performance.now();
+}
+
+pills.forEach(btn => {
+  btn.onclick = () => switchShape(btn.dataset.shape);
+});
+
+// --- Resize & Animation ---
+new ResizeObserver(([e]) => {
+  const { width, height } = e.contentRect;
+  r.setSize(width, height);
+  cam.aspect = width / height;
+  cam.updateProjectionMatrix();
+}).observe(host);
+
+const CYCLE_MS = 8500, TRACE_MS = 6200;
+let lastTime = performance.now();
+
+const frame = now => {
+  const dt = Math.min((now - lastTime) / 1000, 0.1);
+  lastTime = now;
+
+  // Smooth building height transitions (only while something is still moving);
+  // street cells shrink to nothing instead of sitting 2 cm tall under the route.
+  if (dirty) {
+    dirty = false;
+    const lerpFactor = Math.min(1, dt * 9);
+    for (const b of buildings) {
+      if (Math.abs(b.curH - b.targetH) > 0.005) { b.curH += (b.targetH - b.curH) * lerpFactor; dirty = true; }
+      else b.curH = b.targetH;
+      const w = b.curH > 0.003 ? BLOCK_SIZE : 0, h = Math.max(b.curH, 1e-4);
+      vScale.set(w, h, w);
+      vPos.set(b.x, h / 2, b.z);
+      dummy.compose(vPos, qIdentity, vScale);
+      blocks.setMatrixAt(b.idx, dummy);
+    }
+    blocks.instanceMatrix.needsUpdate = true;
+  }
+
+  // Route progression
+  const elapsed = (now - traceStartTime) % CYCLE_MS;
+  const k = reduced ? 1 : Math.min(1, elapsed / TRACE_MS);
+  const t = k * k * (3 - 2 * k);
+  setRouteProgress(t);
+
+  // Runner pulse
+  const pulse = (now % 1000) / 1000;
+  runnerRing.scale.setScalar(1 + pulse * 0.8);
+  ringMat.opacity = Math.max(0, 0.8 * (1 - pulse));
+
+  ctl.update();
+  r.render(scene, cam);
+};
+
+new IntersectionObserver(([e]) => r.setAnimationLoop(e.isIntersecting ? frame : null)).observe(host);
+</script>
+</body>
+</html>
