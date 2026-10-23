@@ -139,8 +139,8 @@
 
   .langs { font-size: 15px; letter-spacing: 0.06em; }
   #courses { padding: 120px 24px 40px; }
-  .courses { list-style: none; max-width: 660px; margin: 40px auto 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px 32px; }
-  .courses li::before { content: "> "; color: var(--lime); }
+  .courses { list-style: disc; max-width: 660px; margin: 40px auto 0; padding-left: 1.25em; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px 32px; }
+  .courses li::marker { color: #888; font-size: .8em; }
   footer.site { padding: 48px 24px 64px; text-align: center; font-size: 13px; }
   footer.site .footer-links { display: flex; flex-direction: column; gap: 10px; align-items: center; }
   footer.site a { text-underline-offset: 4px; color: color-mix(in srgb, currentColor 75%, transparent); transition: color .15s ease; }
