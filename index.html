@@ -19,7 +19,7 @@
     --ink: #4f4f4f;
     --dark: #222;
     --light: #ececec;
-    --dim: #6b6b6b;
+    --dim: #8f8f8f;
     --lime: oklch(0.86 0.2 142);
     --pixel: "Silkscreen", monospace;
     --mono: "JetBrains Mono", ui-monospace, monospace;
@@ -35,16 +35,26 @@
   h1, h2 { font-family: var(--pixel); font-weight: 400; letter-spacing: 0.02em; line-height: 1.1; }
   h2 { font-size: clamp(32px, 6vw, 56px); text-align: center; }
   .head { max-width: 660px; margin: 0 auto 48px; padding: 28px 24px; text-align: center; }
-  .head p { margin-top: 12px; color: color-mix(in srgb, currentColor 72%, transparent); }
+  .head p { margin-top: 12px; text-align: left; }
   .tag { font-family: var(--pixel); font-size: 15px; margin-top: 6px; display: block; }
   .links { margin-top: 14px; font-size: 13px; display: flex; gap: 18px; justify-content: center; }
   .links a { text-underline-offset: 4px; }
 
   /* Hero */
-  .hero { min-height: 100vh; display: grid; place-items: center; text-align: center; }
+  .hero { min-height: 100svh; position: relative; display: grid; place-items: center; text-align: center; }
   .hero h1 { font-size: clamp(56px, 11vw, 120px); }
   .hero p { font-family: var(--pixel); font-size: clamp(16px, 2.6vw, 28px); margin-top: 10px; animation: floatUp 1.4s 0.5s cubic-bezier(.2,.7,.2,1) both; }
   @keyframes floatUp { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: none; } }
+  .toplinks { position: absolute; top: 20px; right: 24px; display: flex; gap: 22px; font-size: 16px; }
+  .toplinks a, .index a { text-underline-offset: 4px; padding: 12px 0; display: inline-block; }
+  .index { margin-top: 28px; display: flex; gap: 22px; justify-content: center; flex-wrap: wrap; font-size: 16px; }
+  .index a { text-decoration: none; border-bottom: 1px dotted currentColor; padding-bottom: 2px; }
+  .index a:hover { border-bottom-style: solid; }
+  /* Scroll hint: pixel arrow that steps down (no smooth bounce), hides once the page moves. */
+  .scrollhint { position: absolute; left: 50%; bottom: 28px; transform: translateX(-50%); display: grid; justify-items: center; gap: 10px; font: 14px var(--pixel); letter-spacing: 0.08em; text-decoration: none; color: var(--ink); transition: opacity .3s ease; }
+  .scrollhint svg { width: 21px; height: auto; animation: step 1.6s steps(1) infinite; }
+  @keyframes step { 0%, 100% { transform: none; } 50% { transform: translateY(4px); } }
+  .scrolled .scrollhint { opacity: 0; pointer-events: none; }
   /* Blue jay perches on the C. Tune bottom/left if the font metrics shift. */
   .hero h1 { position: relative; z-index: 0; }
   .perch { position: relative; }
@@ -138,12 +148,11 @@
   .status { background: #22a32a; color: #071; color: #031a03; padding: 0 8px; display: flex; justify-content: space-between; }
 
   .langs { font-size: 15px; letter-spacing: 0.06em; }
-  #courses { padding: 120px 24px 40px; }
-  .courses { list-style: disc; max-width: 660px; margin: 40px auto 0; padding-left: 1.25em; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px 32px; }
-  .courses li::marker { color: #888; font-size: .8em; }
-  footer.site { padding: 48px 24px 64px; text-align: center; font-size: 13px; }
+  footer.site { padding: 96px 24px 64px; text-align: center; font-size: 13px; }
   footer.site .footer-links { display: flex; flex-direction: column; gap: 10px; align-items: center; }
   footer.site a { text-underline-offset: 4px; color: color-mix(in srgb, currentColor 75%, transparent); transition: color .15s ease; }
+  footer.site .coursework { max-width: 660px; margin: 0 auto 40px; line-height: 1.8; color: color-mix(in srgb, currentColor 75%, transparent); }
+  footer.site .coursework span { color: var(--light); }
   footer.site a:hover { color: var(--light); }
 
   @media (max-width: 720px) {
@@ -154,6 +163,9 @@
     .pane .log { min-height: 120px; }
 
     .git iframe, .videos { height: 460px; }
+    .links a, footer.site a, .tabs button { display: inline-block; padding: 12px 4px; }
+    .toplinks { left: 0; right: 0; justify-content: center; gap: 14px; }
+    .index { gap: 4px 18px; }
     .videos { grid-template-columns: 1fr; }
   }
   @media (prefers-reduced-motion: reduce) {
@@ -164,10 +176,23 @@
 <body>
 
 <section class="light hero">
+  <nav class="toplinks" aria-label="Contact">
+    <a href="https://github.com/Chieler" target="_blank" rel="noopener noreferrer">github</a>
+    <a href="https://www.linkedin.com/in/chieler-li0210/" target="_blank" rel="noopener noreferrer">linkedin</a>
+    <a href="mailto:chielerli@gmail.com">email</a>
+    <a href="https://drive.google.com/file/d/1A-vzlB8M39O67nVpVZyzLPXNZ87tX_7y/view?usp=sharing" target="_blank" rel="noopener noreferrer">resume</a>
+  </nav>
   <div>
     <h1><span class="perch">C<svg class="jay" id="jay" viewBox="0 0 18 19" aria-hidden="true" shape-rendering="crispEdges"></svg></span>hieler Li</h1>
     <p>Junior · Math, CS · UW-Madison</p>
+    <nav class="index" aria-label="Projects">
+      <a href="#scene">scene-difference</a><a href="#tandem">tandem</a><a href="#motion">motion</a><a href="#papershade">papershade</a>
+    </nav>
   </div>
+  <a class="scrollhint" href="#scene" aria-label="Scroll to projects">
+    <span>4 projects</span>
+    <svg viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true" fill="currentColor"><path d="M3 0h1v4H3zM1 3h1v1H1zM5 3h1v1H5zM2 4h1v1H2zM4 4h1v1H4zM3 5h1v1H3z"/></svg>
+  </a>
 </section>
 
 <canvas class="bleed" data-from="#f6f3ec" data-to="#222222" aria-hidden="true"></canvas>
@@ -190,9 +215,9 @@
       <div class="diffhead">
         <div class="del">--- a/bathroom (video A)</div>
         <div class="add">+++ b/bathroom (video B)</div>
-        <div class="hunk">@@ moved 3.10 m: Listerine mouthwash bottle @@ drag to orbit</div>
+        <div class="hunk">@@ moved 3.10 m: Listerine mouthwash bottle @@</div>
       </div>
-      <iframe id="viewer" src="assets/scene-viewer.html?v=12" title="Interactive 3D point cloud of the room, showing detected changes" loading="lazy"></iframe>
+      <iframe id="viewer" src="assets/scene-viewer.html?v=13" title="Interactive 3D point cloud of the room, showing detected changes" loading="lazy"></iframe>
       <div class="videos" id="videos" hidden>
         <figure><video src="assets/scene-before.mp4" muted loop playsinline preload="none"></video><figcaption class="del">a/ before.mp4</figcaption></figure>
         <figure><video src="assets/scene-after.mp4" muted loop playsinline preload="none"></video><figcaption class="add">b/ after.mp4</figcaption></figure>
@@ -242,9 +267,9 @@
       <div class="stage" id="stage" role="img" aria-label="Interactive 3D city with a runner tracing a real GPS route through its streets. Drag to rotate."></div>
       <aside class="motion-side">
         <div class="motion-pills" role="tablist" aria-label="Route shapes">
-          <button class="motion-pill active" data-shape="capybara">Capybara</button>
-          <button class="motion-pill" data-shape="horse">Horse</button>
-          <button class="motion-pill" data-shape="elephant">Elephant</button>
+          <button class="motion-pill active" role="tab" aria-selected="true" data-shape="capybara">Capybara</button>
+          <button class="motion-pill" role="tab" aria-selected="false" tabindex="-1" data-shape="horse">Horse</button>
+          <button class="motion-pill" role="tab" aria-selected="false" tabindex="-1" data-shape="elephant">Elephant</button>
         </div>
         <dl class="motion-stats">
           <dt>Dist</dt><dd id="stat-dist">10.1 km</dd>
@@ -283,22 +308,8 @@
 <div class="flash" aria-hidden="true"></div>
 <button class="pill" id="pill" aria-label="Turn Papershade off">P · off</button>
 
-<section class="dark" id="courses">
-  <div class="wrap">
-    <h2>Courses</h2>
-    <ul class="courses">
-      <li>Data Structures and Algorithms</li>
-      <li>Intro to Artificial Intelligence</li>
-      <li>Matrix Methods for Machine Learning</li>
-      <li>Data Engineering and Data Science</li>
-      <li>Machine Organization and Programming</li>
-      <li>Programming III</li>
-      <li>Intro to Discrete Mathematics</li>
-    </ul>
-  </div>
-</section>
-
 <footer class="site dark">
+  <p class="coursework"><span>Coursework</span> · Data Structures &amp; Algorithms · Intro to AI · Matrix Methods for ML · Data Engineering &amp; Data Science · Machine Organization · Programming III · Discrete Math</p>
   <div class="footer-links">
     <a href="https://github.com/Chieler" target="_blank" rel="noopener noreferrer">github.com/Chieler</a>
     <a href="https://www.linkedin.com/in/chieler-li0210/" target="_blank" rel="noopener noreferrer">linkedin.com/in/chieler-li0210</a>
@@ -306,6 +317,7 @@
   </div>
 </footer>
 
+<script>addEventListener("scroll", () => document.body.classList.toggle("scrolled", scrollY > 40), { passive: true });</script>
 <script src="assets/faces.js"></script>
 <script>
 const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -497,7 +509,7 @@ let currentShape = "capybara";
 // --- Scene & Camera ---
 const scene = new THREE.Scene();
 const cam = new THREE.PerspectiveCamera(28, host.clientWidth / host.clientHeight || 1, 0.1, 120);
-cam.position.set(22, 23, 24);
+cam.position.set(11, 36, 12);
 
 const r = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 r.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -512,7 +524,7 @@ ctl.enableDamping = true;
 ctl.dampingFactor = 0.05;
 ctl.enablePan = false;
 ctl.enableZoom = false;
-ctl.minPolarAngle = Math.PI / 6;
+ctl.minPolarAngle = Math.PI / 12;
 ctl.maxPolarAngle = Math.PI / 2.35;
 ctl.target.set(0, 0, 0);
 
@@ -562,10 +574,10 @@ world.add(rimMesh);
 // One cell per mask pixel; streets are mask zeros, so routes always run in real streets.
 const N = Math.sqrt(FACES.capybara.mask.length);
 const C = SLAB_SIZE / N;
-const BLOCK_SIZE = C * 0.86;
+const BLOCK_SIZE = C * 0.9;
 
 const blockGeo = new THREE.BoxGeometry(1, 1, 1);
-const blockMat = new THREE.MeshLambertMaterial({ color: 0x2c2c2c });
+const blockMat = new THREE.MeshLambertMaterial({ color: 0x4a4a4a });
 const blocks = new THREE.InstancedMesh(blockGeo, blockMat, N * N);
 blocks.castShadow = true;
 blocks.receiveShadow = true;
@@ -578,7 +590,7 @@ for (let j = 0; j < N; j++) {
   for (let i = 0; i < N; i++) {
     const x = (i + 0.5) * C - SLAB_SIZE / 2;
     const z = (j + 0.5) * C - SLAB_SIZE / 2;
-    const baseH = 0.22 + Math.pow(rnd(), 2) * 1.0;
+    const baseH = 0.34 + Math.pow(rnd(), 1.6) * 1.1;
     buildings.push({ idx: j * N + i, x, z, baseH, curH: 0, targetH: 0 });
   }
 }
@@ -588,9 +600,39 @@ const vScale = new THREE.Vector3();
 const vPos = new THREE.Vector3();
 const qIdentity = new THREE.Quaternion();
 
+// The OSM mask is ~80% street at 96px and has bare patches (water, map edge).
+// Grow some blocks into neighbouring street cells, fill bare patches with a
+// synthetic 3-cell street grid, and keep every cell the route crosses open.
+const GROW = 0.3;   // chance a street cell next to a block becomes a block
+const hash = k => { const x = Math.sin(k * 12.9898) * 43758.5453; return x - Math.floor(x); };
+function denseMask({ mask, route }) {
+  const out = new Uint8Array(N * N);
+  const isB = (i, j) => i >= 0 && j >= 0 && i < N && j < N && mask[j * N + i] === "1";
+  const bare = (i, j) => {
+    for (let dj = -3; dj <= 3; dj++) for (let di = -3; di <= 3; di++) if (isB(i + di, j + dj)) return false;
+    return true;
+  };
+  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+    const k = j * N + i;
+    if (isB(i, j)) out[k] = 1;
+    else if (isB(i - 1, j) || isB(i + 1, j) || isB(i, j - 1) || isB(i, j + 1)) out[k] = hash(k) < GROW ? 1 : 0;
+    else if (bare(i, j)) out[k] = i % 3 && j % 3 && hash(k + 7) < 0.75 ? 1 : 0;
+  }
+  for (let k = 1; k < route.length; k++) {
+    const [x0, y0] = route[k - 1], [x1, y1] = route[k];
+    const steps = Math.ceil(Math.hypot(x1 - x0, y1 - y0) / (512 / N) * 2) || 1;
+    for (let t = 0; t <= steps; t++) {
+      const i = Math.floor((x0 + (x1 - x0) * t / steps) / 512 * N);
+      const j = Math.floor((y0 + (y1 - y0) * t / steps) / 512 * N);
+      if (i >= 0 && j >= 0 && i < N && j < N) out[j * N + i] = 0;
+    }
+  }
+  return out;
+}
+
 function setBuildingTargets(shapeName) {
-  const mask = FACES[shapeName].mask;
-  for (const b of buildings) b.targetH = mask[b.idx] === "1" ? b.baseH : 0;
+  const mask = denseMask(FACES[shapeName]);
+  for (const b of buildings) b.targetH = mask[b.idx] ? b.baseH : 0;
 }
 setBuildingTargets(currentShape);
 // Initialize current heights instantly for first frame
@@ -598,7 +640,7 @@ buildings.forEach(b => { b.curH = b.targetH; });
 let dirty = true;
 
 // --- Active Route & Runner ---
-const routeMat = new THREE.MeshBasicMaterial({ color: 0x7fe86e });
+const routeMat = new THREE.MeshBasicMaterial({ color: 0x7fe86e, depthTest: false });
 const routeGroup = new THREE.Group();
 world.add(routeGroup);
 
@@ -638,6 +680,7 @@ function buildRoute(shapeName) {
       dir.normalize();
 
       const mesh = new THREE.Mesh(slab, routeMat);
+      mesh.renderOrder = 10;
       mesh.position.copy(a);
       mesh.quaternion.setFromRotationMatrix(
         new THREE.Matrix4().makeBasis(dir, new THREE.Vector3(0, 1, 0), dir.clone().cross(new THREE.Vector3(0, 1, 0)))
@@ -674,7 +717,12 @@ let traceStartTime = performance.now();
 function switchShape(name) {
   if (name === currentShape) return;
   currentShape = name;
-  pills.forEach(p => p.classList.toggle("active", p.dataset.shape === name));
+  pills.forEach(p => {
+    const on = p.dataset.shape === name;
+    p.classList.toggle("active", on);
+    p.setAttribute("aria-selected", on);
+    p.tabIndex = on ? 0 : -1;
+  });
   statDist.textContent = FACES[name].km + " km";
   statCity.textContent = FACES[name].where;
 
@@ -684,8 +732,16 @@ function switchShape(name) {
   traceStartTime = performance.now();
 }
 
-pills.forEach(btn => {
+pills.forEach((btn, i) => {
   btn.onclick = () => switchShape(btn.dataset.shape);
+  btn.onkeydown = e => {
+    const step = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 }[e.key];
+    if (!step) return;
+    e.preventDefault();
+    const next = pills[(i + step + pills.length) % pills.length];
+    next.focus();
+    switchShape(next.dataset.shape);
+  };
 });
 
 // --- Resize & Animation ---
@@ -693,6 +749,7 @@ new ResizeObserver(([e]) => {
   const { width, height } = e.contentRect;
   r.setSize(width, height);
   cam.aspect = width / height;
+  cam.zoom = Math.min(1, cam.aspect / 1.35);   // narrow stages: pull back so the slab fits
   cam.updateProjectionMatrix();
 }).observe(host);
 
