@@ -77,23 +77,33 @@
   .motion-pitch { font: 400 clamp(16px, 2.2vw, 22px)/1.4 var(--pixel); margin-top: 12px; }
   .motion-pitch em, #motion .head em { font-style: normal; color: var(--lime); }
 
-  /* Motion: an isometric city diorama with a traced route through its streets. */
+  /* Motion street atlas */
   #motion { --night: #0a0a0a; background: var(--night); padding: 56px 24px 48px; min-height: 100vh; }
   #motion .head { margin-bottom: 16px; padding: 18px 24px; }
   #motion .trace { width: min(340px, 100%); }
-  .motion-body { display: grid; grid-template-columns: 1fr 200px; gap: 24px; align-items: center; }
-  .stage { height: clamp(420px, calc(100vh - 330px), 820px); position: relative; cursor: grab; touch-action: pan-y; }
+  .motion-body { display: grid; grid-template-columns: minmax(0, 1fr) 186px; gap: 24px; align-items: center; }
+  .stage { position: relative; min-width: 0; cursor: grab; touch-action: pan-y; user-select: none; }
   .stage:active { cursor: grabbing; }
-  .stage canvas { display: block; width: 100% !important; height: 100% !important; }
-  .motion-side { display: grid; gap: 20px; align-content: center; }
+  .stage:focus-visible, .motion-pill:focus-visible, .motion-play:focus-visible {
+    outline: 2px solid var(--lime); outline-offset: 3px;
+  }
+  #motion-map { width: 100%; height: auto; display: block; }
+  #motion-basemap { display: block; width: 100%; height: 100%; }
+  #motion-trace { stroke: var(--lime); stroke-dasharray: 1; }
+  #motion-runner { fill: var(--lime); }
+  .motion-side { display: grid; gap: 18px; align-content: center; }
   .motion-pills { display: grid; border: 1px dotted color-mix(in srgb, currentColor 35%, transparent); padding: 2px; gap: 2px; background: #111; }
-  .motion-pill { font: 12px var(--pixel); padding: 8px 14px; background: none; border: 0; color: var(--dim); cursor: pointer; text-align: left; transition: all .15s ease; }
+  .motion-pill { font: 12px var(--pixel); padding: 9px 12px; background: none; border: 0; color: var(--dim); cursor: pointer; text-align: left; transition: background .15s ease, color .15s ease; }
   .motion-pill:hover { color: var(--light); }
   .motion-pill.active { background: var(--lime); color: #0a0a0a; }
   .motion-stats { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; font-size: 12px; margin: 0; }
-  .motion-stats dt { color: var(--dim); }
+  .motion-stats dt, .motion-notes { color: var(--dim); }
   .motion-stats dd { margin: 0; color: var(--lime); }
-  .hint { font-size: 12px; color: var(--dim); }
+  .motion-play { justify-self: start; border: 1px solid #464646; background: #141414; color: var(--light); padding: 8px 11px; font: inherit; font-size: 12px; cursor: pointer; }
+  .motion-play:hover { border-color: var(--lime); }
+  .motion-notes { font-size: 11px; line-height: 1.6; }
+  .motion-notes p { margin: 0 0 4px; }
+  .motion-notes a { color: inherit; text-underline-offset: 3px; }
 
   /* Scene / Difference */
   .difftitle { display: inline-grid; text-align: left; }
@@ -162,8 +172,13 @@
 
   @media (max-width: 720px) {
     #motion { padding: 56px 16px 48px; }
-    .motion-body { grid-template-columns: 1fr; }
-    .stage { height: 440px; }
+    .motion-body { grid-template-columns: 1fr; gap: 12px; }
+  .motion-side { grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 12px 16px; }
+  .motion-pills { grid-column: 1 / -1; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .motion-pill { padding-inline: 4px; text-align: center; }
+  .motion-notes { grid-column: 1 / -1; }
+  #motion-route-base, #motion-trace { stroke-width: 5.6; }
+  #motion-route-outline { stroke-width: 9; }
     .panes { grid-template-columns: 1fr; height: auto; }
     .pane .log { min-height: 120px; }
     .profile-row { grid-template-columns: 1fr; gap: 4px; }
@@ -272,18 +287,45 @@
       <div class="links"><a href="https://motiongpx.com/" target="_blank" rel="noopener noreferrer">motiongpx.com</a></div>
     </div>
     <div class="motion-body">
-      <div class="stage" id="stage" role="img" aria-label="Interactive 3D city with a runner tracing a real GPS route through its streets. Drag to rotate."></div>
+      <div class="stage" id="stage" role="tabpanel" tabindex="0" aria-labelledby="motion-capybara" aria-describedby="motion-orbit-hint">
+        <svg id="motion-map" viewBox="0 0 960 840" role="img" aria-labelledby="motion-map-title">
+          <title id="motion-map-title">Capybara running route in San Francisco</title>
+          <g id="motion-slab" stroke="#0a0a0a" stroke-width="1.3" stroke-linejoin="round">
+            <polygon fill="#242424"/><polygon fill="#191919"/>
+            <polygon fill="#242424"/><polygon fill="#191919"/>
+          </g>
+          <g id="motion-plane">
+            <foreignObject width="800" height="800">
+              <canvas id="motion-basemap" width="2048" height="2048"></canvas>
+            </foreignObject>
+            <rect width="800" height="800" fill="none" stroke="#555" stroke-width="1.8"/>
+            <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path id="motion-route-outline" stroke="#101010" stroke-width="8"/>
+              <path id="motion-route-base" stroke="#505050" stroke-width="4.5"/>
+              <path id="motion-trace" stroke-width="4.5" pathLength="1"/>
+            </g>
+            <g id="motion-runner">
+              <circle r="12" fill="#111" stroke="currentColor" color="var(--lime)" stroke-width="2.2"/>
+              <circle r="5.4"/>
+            </g>
+          </g>
+        </svg>
+      </div>
       <aside class="motion-side">
         <div class="motion-pills" role="tablist" aria-label="Route shapes">
-          <button class="motion-pill active" role="tab" aria-selected="true" data-shape="capybara">Capybara</button>
-          <button class="motion-pill" role="tab" aria-selected="false" tabindex="-1" data-shape="horse">Horse</button>
-          <button class="motion-pill" role="tab" aria-selected="false" tabindex="-1" data-shape="elephant">Elephant</button>
+          <button class="motion-pill active" role="tab" aria-selected="true" id="motion-capybara" aria-controls="stage" data-shape="capybara">Capybara</button>
+          <button class="motion-pill" role="tab" aria-selected="false" tabindex="-1" id="motion-horse" aria-controls="stage" data-shape="horse">Horse</button>
+          <button class="motion-pill" role="tab" aria-selected="false" tabindex="-1" id="motion-elephant" aria-controls="stage" data-shape="elephant">Elephant</button>
         </div>
         <dl class="motion-stats">
-          <dt>Dist</dt><dd id="stat-dist">10.1 km</dd>
+          <dt>Distance</dt><dd id="stat-dist">10.9 km</dd>
           <dt>City</dt><dd id="stat-city">San Francisco</dd>
         </dl>
-        <p class="hint">drag to orbit</p>
+        <button class="motion-play" id="motion-play" type="button">Pause route</button>
+        <div class="motion-notes">
+          <p id="motion-orbit-hint">Drag or use the arrow keys to rotate and tilt.</p>
+          <a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors</a>
+        </div>
       </aside>
     </div>
   </div>
@@ -364,7 +406,6 @@ document.querySelectorAll(".index a, .scrollhint").forEach(link => {
   });
 });
 </script>
-<script src="assets/faces.js"></script>
 <script>
 const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -453,12 +494,12 @@ function whenVisible(el, fn) {
   new IntersectionObserver(([e], o) => { if (e.isIntersecting) { o.disconnect(); fn(); } }, { threshold: 0.3 }).observe(el);
 }
 
-// Motion: trace the title once the section shows up; the cube module draws the routes.
+// Motion: trace the title once the section shows up; the map script draws the routes.
 whenVisible(document.getElementById("motion"), () => document.getElementById("motion").classList.add("seen"));
 
 // Scene / Difference tabs drive the embedded viewer's own Diff / A / B radios (same origin).
 (() => {
-  const tabs = [...document.querySelectorAll('[role="tab"]')], viewer = document.getElementById("viewer");
+  const tabs = [...document.querySelectorAll('.tabs [role="tab"]')], viewer = document.getElementById("viewer");
   const videos = document.getElementById("videos"), vids = [...videos.querySelectorAll("video")];
   // The viewer redraws its point cloud every frame; pause it while it is off screen.
   new IntersectionObserver(([e]) => { if (viewer.contentWindow) viewer.contentWindow.paused = !e.isIntersecting; }).observe(viewer);
@@ -533,312 +574,7 @@ whenVisible(document.getElementById("motion"), () => document.getElementById("mo
   whenVisible(document.querySelector(".tmux"), async () => { do await script(); while (!reduced); });
 })();
 </script>
-<script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}</script>
-<script type="module">
-// Motion: an architectural city diorama slab. Routes are traced through the streets
-// with dynamic building heights and interactive shape switching. Drag to rotate.
-import * as THREE from "three";
-import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-
-const host = document.getElementById("stage");
-const SLAB = 16.8;
-const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-// Real Motion output per shape (assets/faces.js): the route on OSM streets and a
-// building mask rasterized from the same street network, both in a 512 box.
-const FACES = window.FACES;
-const toLoops = route => [route.map(([x, y]) => [(x - 256) / 512 * SLAB, (y - 256) / 512 * SLAB])];
-const SHAPES = Object.fromEntries(Object.entries(FACES).map(([k, f]) => [k, toLoops(f.route)]));
-
-let currentShape = "capybara";
-
-// --- Scene & Camera ---
-const scene = new THREE.Scene();
-const cam = new THREE.PerspectiveCamera(28, host.clientWidth / host.clientHeight || 1, 0.1, 120);
-cam.position.set(-16, 36, 0);
-
-const r = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-r.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-r.setSize(host.clientWidth, host.clientHeight);
-r.shadowMap.enabled = true;
-r.shadowMap.type = THREE.PCFSoftShadowMap;
-r.domElement.style.touchAction = "pan-y";
-host.append(r.domElement);
-
-const ctl = new OrbitControls(cam, r.domElement);
-ctl.enableDamping = true;
-ctl.dampingFactor = 0.05;
-ctl.enablePan = false;
-ctl.enableZoom = false;
-ctl.minPolarAngle = Math.PI / 12;
-ctl.maxPolarAngle = Math.PI / 2.35;
-ctl.target.set(0, 0, 0);
-
-// --- Lighting ---
-scene.add(new THREE.AmbientLight(0xffffff, 0.68));
-const sun = new THREE.DirectionalLight(0xffffff, 1.4);
-sun.position.set(16, 26, 12);
-sun.castShadow = true;
-sun.shadow.bias = -0.0008;
-sun.shadow.normalBias = 0.02;
-sun.shadow.mapSize.width = 2048;
-sun.shadow.mapSize.height = 2048;
-sun.shadow.camera.near = 0.5;
-sun.shadow.camera.far = 60;
-const d = 13;
-sun.shadow.camera.left = -d; sun.shadow.camera.right = d;
-sun.shadow.camera.top = d; sun.shadow.camera.bottom = -d;
-scene.add(sun);
-
-const fill = new THREE.DirectionalLight(0x7fe86e, 0.18);
-fill.position.set(-14, 10, -14);
-scene.add(fill);
-
-// --- Architectural Plinth / Foundation ---
-const world = new THREE.Group();
-scene.add(world);
-
-const SLAB_SIZE = SLAB;
-const SLAB_THICKNESS = 1.1;
-
-const baseGeo = new THREE.BoxGeometry(SLAB_SIZE, SLAB_THICKNESS, SLAB_SIZE);
-const baseMat = new THREE.MeshLambertMaterial({ color: 0x1b1b1b });
-const baseMesh = new THREE.Mesh(baseGeo, baseMat);
-baseMesh.position.y = -SLAB_THICKNESS / 2;
-baseMesh.receiveShadow = true;
-world.add(baseMesh);
-
-
-
-const rimGeo = new THREE.BoxGeometry(SLAB_SIZE + 0.28, 0.12, SLAB_SIZE + 0.28);
-const rimMat = new THREE.MeshLambertMaterial({ color: 0x242424 });
-const rimMesh = new THREE.Mesh(rimGeo, rimMat);
-rimMesh.position.y = -SLAB_THICKNESS + 0.04;   // below the top face, so the two never fight
-world.add(rimMesh);
-
-// --- City Blocks Grid ---
-// One cell per mask pixel; streets are mask zeros, so routes always run in real streets.
-const N = Math.sqrt(FACES.capybara.mask.length);
-const C = SLAB_SIZE / N;
-const BLOCK_SIZE = C * 0.9;
-
-const blockGeo = new THREE.BoxGeometry(1, 1, 1);
-const blockMat = new THREE.MeshLambertMaterial({ color: 0x4a4a4a });
-const blocks = new THREE.InstancedMesh(blockGeo, blockMat, N * N);
-blocks.castShadow = true;
-blocks.receiveShadow = true;
-world.add(blocks);
-
-let seed = 42;
-const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-const buildings = [];
-for (let j = 0; j < N; j++) {
-  for (let i = 0; i < N; i++) {
-    const x = (i + 0.5) * C - SLAB_SIZE / 2;
-    const z = (j + 0.5) * C - SLAB_SIZE / 2;
-    const baseH = 0.34 + Math.pow(rnd(), 1.6) * 1.1;
-    buildings.push({ idx: j * N + i, x, z, baseH, curH: 0, targetH: 0 });
-  }
-}
-
-const dummy = new THREE.Matrix4();
-const vScale = new THREE.Vector3();
-const vPos = new THREE.Vector3();
-const qIdentity = new THREE.Quaternion();
-
-// The OSM mask is ~80% street at 96px and has bare patches (water, map edge).
-// Grow some blocks into neighbouring street cells, fill bare patches with a
-// synthetic 3-cell street grid, and keep every cell the route crosses open.
-const GROW = 0.3;   // chance a street cell next to a block becomes a block
-const hash = k => { const x = Math.sin(k * 12.9898) * 43758.5453; return x - Math.floor(x); };
-function denseMask({ mask, route }) {
-  const out = new Uint8Array(N * N);
-  const isB = (i, j) => i >= 0 && j >= 0 && i < N && j < N && mask[j * N + i] === "1";
-  const bare = (i, j) => {
-    for (let dj = -3; dj <= 3; dj++) for (let di = -3; di <= 3; di++) if (isB(i + di, j + dj)) return false;
-    return true;
-  };
-  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
-    const k = j * N + i;
-    if (isB(i, j)) out[k] = 1;
-    else if (isB(i - 1, j) || isB(i + 1, j) || isB(i, j - 1) || isB(i, j + 1)) out[k] = hash(k) < GROW ? 1 : 0;
-    else if (bare(i, j)) out[k] = i % 3 && j % 3 && hash(k + 7) < 0.75 ? 1 : 0;
-  }
-  for (let k = 1; k < route.length; k++) {
-    const [x0, y0] = route[k - 1], [x1, y1] = route[k];
-    const steps = Math.ceil(Math.hypot(x1 - x0, y1 - y0) / (512 / N) * 2) || 1;
-    for (let t = 0; t <= steps; t++) {
-      const i = Math.floor((x0 + (x1 - x0) * t / steps) / 512 * N);
-      const j = Math.floor((y0 + (y1 - y0) * t / steps) / 512 * N);
-      if (i >= 0 && j >= 0 && i < N && j < N) out[j * N + i] = 0;
-    }
-  }
-  return out;
-}
-
-function setBuildingTargets(shapeName) {
-  const mask = denseMask(FACES[shapeName]);
-  for (const b of buildings) b.targetH = mask[b.idx] ? b.baseH : 0;
-}
-setBuildingTargets(currentShape);
-// Initialize current heights instantly for first frame
-buildings.forEach(b => { b.curH = b.targetH; });
-let dirty = true;
-
-// --- Active Route & Runner ---
-const routeMat = new THREE.MeshBasicMaterial({ color: 0x7fe86e, depthTest: false });
-const routeGroup = new THREE.Group();
-world.add(routeGroup);
-
-const runner = new THREE.Mesh(
-  new THREE.SphereGeometry(0.18, 16, 16),
-  new THREE.MeshBasicMaterial({ color: 0xffffff })
-);
-world.add(runner);
-
-const ringGeo = new THREE.RingGeometry(0.24, 0.38, 24);
-ringGeo.rotateX(-Math.PI / 2);
-const ringMat = new THREE.MeshBasicMaterial({ color: 0x7fe86e, transparent: true, opacity: 0.8, side: THREE.DoubleSide });
-const runnerRing = new THREE.Mesh(ringGeo, ringMat);
-world.add(runnerRing);
-
-let segments = [];
-let totalRouteLength = 0;
-
-function buildRoute(shapeName) {
-  while (routeGroup.children.length > 0) {
-    const m = routeGroup.children.pop();
-    m.geometry.dispose();
-  }
-  segments = [];
-  totalRouteLength = 0;
-
-  const routes = SHAPES[shapeName];
-  const slab = new THREE.BoxGeometry(1, 0.05, 0.18).translate(0.5, 0, 0);
-
-  for (const line of routes) {
-    for (let i = 1; i < line.length; i++) {
-      const a = new THREE.Vector3(line[i - 1][0], 0.04, line[i - 1][1]);
-      const b = new THREE.Vector3(line[i][0], 0.04, line[i][1]);
-      const dir = b.clone().sub(a);
-      const len = dir.length();
-      if (len < 0.001) continue;
-      dir.normalize();
-
-      const mesh = new THREE.Mesh(slab, routeMat);
-      mesh.renderOrder = 10;
-      mesh.position.copy(a);
-      mesh.quaternion.setFromRotationMatrix(
-        new THREE.Matrix4().makeBasis(dir, new THREE.Vector3(0, 1, 0), dir.clone().cross(new THREE.Vector3(0, 1, 0)))
-      );
-      routeGroup.add(mesh);
-      segments.push({ a, b, len, mesh });
-      totalRouteLength += len;
-    }
-  }
-}
-buildRoute(currentShape);
-
-function setRouteProgress(t) {
-  let left = t * totalRouteLength;
-  for (const g of segments) {
-    const k = Math.max(0, Math.min(1, left / g.len));
-    g.mesh.visible = k > 0;
-    g.mesh.scale.x = Math.max(k * g.len, 1e-4);
-    if (k > 0) {
-      runner.position.lerpVectors(g.a, g.b, k).setY(0.18);
-      runnerRing.position.set(runner.position.x, 0.06, runner.position.z);
-    }
-    left -= g.len;
-  }
-}
-
-// --- Controls UI ---
-const pills = document.querySelectorAll(".motion-pill");
-const statDist = document.getElementById("stat-dist");
-const statCity = document.getElementById("stat-city");
-
-let traceStartTime = performance.now();
-
-function switchShape(name) {
-  if (name === currentShape) return;
-  currentShape = name;
-  pills.forEach(p => {
-    const on = p.dataset.shape === name;
-    p.classList.toggle("active", on);
-    p.setAttribute("aria-selected", on);
-    p.tabIndex = on ? 0 : -1;
-  });
-  statDist.textContent = FACES[name].km + " km";
-  statCity.textContent = FACES[name].where;
-
-  setBuildingTargets(name);
-  dirty = true;
-  buildRoute(name);
-  traceStartTime = performance.now();
-}
-
-pills.forEach((btn, i) => {
-  btn.onclick = () => switchShape(btn.dataset.shape);
-  btn.onkeydown = e => {
-    const step = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 }[e.key];
-    if (!step) return;
-    e.preventDefault();
-    const next = pills[(i + step + pills.length) % pills.length];
-    next.focus();
-    switchShape(next.dataset.shape);
-  };
-});
-
-// --- Resize & Animation ---
-new ResizeObserver(([e]) => {
-  const { width, height } = e.contentRect;
-  r.setSize(width, height);
-  cam.aspect = width / height;
-  cam.zoom = Math.min(1, cam.aspect / 1.35);   // narrow stages: pull back so the slab fits
-  cam.updateProjectionMatrix();
-}).observe(host);
-
-const CYCLE_MS = 8500, TRACE_MS = 6200;
-let lastTime = performance.now();
-
-const frame = now => {
-  const dt = Math.min((now - lastTime) / 1000, 0.1);
-  lastTime = now;
-
-  // Smooth building height transitions (only while something is still moving);
-  // street cells shrink to nothing instead of sitting 2 cm tall under the route.
-  if (dirty) {
-    dirty = false;
-    const lerpFactor = Math.min(1, dt * 9);
-    for (const b of buildings) {
-      if (Math.abs(b.curH - b.targetH) > 0.005) { b.curH += (b.targetH - b.curH) * lerpFactor; dirty = true; }
-      else b.curH = b.targetH;
-      const w = b.curH > 0.003 ? BLOCK_SIZE : 0, h = Math.max(b.curH, 1e-4);
-      vScale.set(w, h, w);
-      vPos.set(b.x, h / 2, b.z);
-      dummy.compose(vPos, qIdentity, vScale);
-      blocks.setMatrixAt(b.idx, dummy);
-    }
-    blocks.instanceMatrix.needsUpdate = true;
-  }
-
-  // Route progression
-  const elapsed = (now - traceStartTime) % CYCLE_MS;
-  const k = reduced ? 1 : Math.min(1, elapsed / TRACE_MS);
-  const t = k * k * (3 - 2 * k);
-  setRouteProgress(t);
-
-  // Runner pulse
-  const pulse = (now % 1000) / 1000;
-  runnerRing.scale.setScalar(1 + pulse * 0.8);
-  ringMat.opacity = Math.max(0, 0.8 * (1 - pulse));
-
-  ctl.update();
-  r.render(scene, cam);
-};
-
-new IntersectionObserver(([e]) => r.setAnimationLoop(e.isIntersecting ? frame : null)).observe(host);
-</script>
+<script src="assets/motion-map-data.js"></script>
+<script src="assets/motion-map.js"></script>
 </body>
 </html>

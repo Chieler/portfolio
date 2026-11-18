@@ -7,3 +7,6 @@ Thumbs.db
 .impeccable/
 .worktrees/
 *.log
+
+# Local output from the Motion bake scripts
+scripts/__pycache__/
